@@ -1,0 +1,30 @@
+name: Lean CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Only installs elan and the toolchain from lean-toolchain; the build steps are below.
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+
+      - name: Resolve dependencies (if lake-manifest.json is not committed yet)
+        run: |
+          if [ ! -f lake-manifest.json ]; then
+            lake update
+            cp .lake/packages/mathlib/lean-toolchain lean-toolchain
+          fi
+
+      - name: Fetch prebuilt Mathlib
+        run: lake exe cache get
+
+      - name: Build
+        run: lake build
