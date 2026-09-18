@@ -1,0 +1,31 @@
+name: Lean CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          curl -sSfL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # Until lake-manifest.json is committed: resolve Mathlib and adopt its toolchain.
+      - name: Resolve dependencies (only if lake-manifest.json is missing)
+        run: |
+          if [ ! -f lake-manifest.json ]; then
+            lake update
+            cp .lake/packages/mathlib/lean-toolchain lean-toolchain
+          fi
+
+      - name: Fetch prebuilt Mathlib
+        run: lake exe cache get
+
+      - name: Build
+        run: lake build
