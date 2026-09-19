@@ -49,6 +49,7 @@ structure APosterioriData {D : DiscreteFamily div X S₀ ι} {M : MaterialOperat
   resG_bound : ∀ s, ∀ w ∈ V, ⟪s, PP.grad w⟫_ℝ ≤ resG s * ‖PP.grad w‖
   resG_least : ∀ s (b : ℝ), (∀ w ∈ V, ⟪s, PP.grad w⟫_ℝ ≤ b * ‖PP.grad w‖) → resG s ≤ b
   Cst : ℝ
+  Cst_nonneg : 0 ≤ Cst
   stab : ∀ s, ∀ v ∈ V, ∀ g ∈ X, ‖M.Cinv s‖ + ‖PP.grad v‖ + ‖g‖
     ≤ Cst * (‖M.Cinv s - PP.grad v + g‖ + resG s + ‖skw s‖)
   sz : ι → U → U
@@ -62,6 +63,7 @@ structure APosterioriData {D : DiscreteFamily div X S₀ ι} {M : MaterialOperat
   avg : ι → U → U
   avg_mem : ∀ i v, avg i v ∈ V
   Cavg : ℝ
+  Cavg_nonneg : 0 ≤ Cavg
   avg_est : ∀ i, ∀ v ∈ PP.Ustar i,
     (D.h i)⁻¹ ^ 2 * ‖v - avg i v‖ ^ 2 + ‖PP.grad v - PP.grad (avg i v)‖ ^ 2 ≤ Cavg * jump i v
   ustar_ne : ∀ i, PP.ustar i ≠ 0
@@ -186,13 +188,109 @@ theorem estimatorSq_nonneg (i : ι) : 0 ≤ A.estimatorSq i := by
 theorem reliability : ∃ C : ℝ, 0 < C ∧ ∀ i,
     ‖M.Cinv (E.p.σ - (E.q i).σₕ)‖ + ‖PP.grad E.p.u - PP.grad (PP.ustar i)‖
       + ‖E.p.γ - (E.q i).γₕ‖ ≤ C * (A.estimator i + PP.hot i) := by
-  -- Not proved here. Proof of the thesis (Lemma 6.1 and pp. 48–49): apply `stab` to the
-  -- error `(σ - σₕ, u - ũₕ, γ - γₕ)` with the conforming average `ũₕ = avg i u*ₕ`. By
-  -- (41), Gauss' theorem and (36) the three residual norms are `‖C⁻¹σₕ + γₕ - ∇ũₕ‖`,
-  -- `resG (σ - σₕ)` and `‖skw σₕ‖`; `resG (σ - σₕ)` is bounded through `resG_least` by
-  -- `h ‖κu + div σₕ‖ + h.o.t.` using Scott–Zhang, (37) and (52). The terms with `ũₕ` are
-  -- replaced by `u*ₕ` via (67), and Jensen's inequality gives `η`.
-  sorry
+  -- Proof of the thesis (Lemma 6.1 and pp. 48–49): apply `stab` to the error
+  -- `(σ - σₕ, u - ũₕ, γ - γₕ)` with the conforming average `ũₕ = avg i u*ₕ`. By (41) the
+  -- first residual is `‖C⁻¹σₕ + γₕ - ∇ũₕ‖`, the second is bounded by `residual_bound`
+  -- and the third is `‖skw σₕ‖` by `skw_sub_eq`. The terms with `ũₕ` are replaced by
+  -- `u*ₕ` via (67), and each component of `η²` is bounded by `η`.
+  have hCst := A.Cst_nonneg
+  have hCsz := A.Csz_nonneg
+  have hCavg := A.Cavg_nonneg
+  have hsqC : (0:ℝ) ≤ Real.sqrt A.Cavg := Real.sqrt_nonneg _
+  refine ⟨A.Cst * (2 + Real.sqrt A.Cavg + A.Csz) + Real.sqrt A.Cavg + A.Cst * A.Csz + 1,
+    by positivity, fun i => ?_⟩
+  have hh := (D.h_pos i).le
+  have hjump0 := A.jump_nonneg i (PP.ustar i)
+  have hη0 : 0 ≤ A.estimator i := Real.sqrt_nonneg _
+  have hhot0 : 0 ≤ PP.hot i := by
+    simp only [Postprocessing.hot]
+    positivity
+  have hest : A.estimator i = Real.sqrt (A.estimatorSq i) := rfl
+  have hsqSq : A.estimatorSq i
+      = ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ^ 2
+        + D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2
+        + A.jump i (PP.ustar i) + ‖A.skw (E.q i).σₕ‖ ^ 2 := rfl
+  have hpos2 : (0:ℝ) ≤ D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2 := by
+    positivity
+  -- every component of `η²` is bounded by `η`
+  have hc1 : ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ≤ A.estimator i := by
+    have h1 : ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ^ 2
+        ≤ A.estimatorSq i := by
+      rw [hsqSq]; linarith [sq_nonneg ‖A.skw (E.q i).σₕ‖]
+    have h2 := Real.sqrt_le_sqrt h1
+    rwa [Real.sqrt_sq (norm_nonneg _), ← hest] at h2
+  have hc2 : D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ≤ A.estimator i := by
+    have h1 : (D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖) ^ 2 ≤ A.estimatorSq i := by
+      rw [hsqSq, mul_pow]
+      linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖,
+        sq_nonneg ‖A.skw (E.q i).σₕ‖]
+    have h2 := Real.sqrt_le_sqrt h1
+    rwa [Real.sqrt_sq (by positivity), ← hest] at h2
+  have hc3 : ‖A.skw (E.q i).σₕ‖ ≤ A.estimator i := by
+    have h1 : ‖A.skw (E.q i).σₕ‖ ^ 2 ≤ A.estimatorSq i := by
+      rw [hsqSq]
+      linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖]
+    have h2 := Real.sqrt_le_sqrt h1
+    rwa [Real.sqrt_sq (norm_nonneg _), ← hest] at h2
+  -- the conforming average, estimate (67)
+  have hJ : ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖
+      ≤ Real.sqrt A.Cavg * A.estimator i := by
+    have havg := A.avg_est i (PP.ustar i) (PP.ustar_mem i)
+    have hj : A.jump i (PP.ustar i) ≤ A.estimatorSq i := by
+      rw [hsqSq]
+      linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖,
+        sq_nonneg ‖A.skw (E.q i).σₕ‖]
+    have h1 : ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖ ^ 2
+        ≤ A.Cavg * A.estimatorSq i := by
+      have h2 : (0:ℝ) ≤ (D.h i)⁻¹ ^ 2 * ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2 := by positivity
+      linarith [mul_le_mul_of_nonneg_left hj hCavg]
+    have h2 := Real.sqrt_le_sqrt h1
+    rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_mul hCavg, ← hest] at h2
+  -- stability of the primal mixed problem, applied to the error
+  have hvmem : E.p.u - A.avg i (PP.ustar i) ∈ A.V :=
+    A.V.sub_mem A.u_mem (A.avg_mem i (PP.ustar i))
+  have hgmem : E.p.γ - (E.q i).γₕ ∈ X :=
+    X.sub_mem E.p.γ_mem (D.Xh_le i (E.q i).γₕ_mem)
+  have hstab := A.stab (E.p.σ - (E.q i).σₕ) _ hvmem _ hgmem
+  have hres1 : M.Cinv (E.p.σ - (E.q i).σₕ) - PP.grad (E.p.u - A.avg i (PP.ustar i))
+        + (E.p.γ - (E.q i).γₕ)
+      = -(M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (A.avg i (PP.ustar i))) := by
+    simp only [map_sub, A.grad_u]
+    abel
+  have hres1' : ‖M.Cinv (E.p.σ - (E.q i).σₕ) - PP.grad (E.p.u - A.avg i (PP.ustar i))
+        + (E.p.γ - (E.q i).γₕ)‖
+      ≤ ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖
+        + ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖ := by
+    rw [hres1, norm_neg,
+      show M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (A.avg i (PP.ustar i))
+        = (M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i))
+          + (PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))) from by abel]
+    exact norm_add_le _ _
+  have hSk : ‖A.skw (E.p.σ - (E.q i).σₕ)‖ = ‖A.skw (E.q i).σₕ‖ := by
+    rw [A.skw_sub_eq i, norm_neg]
+  have hRle : A.resG (E.p.σ - (E.q i).σₕ) ≤ A.Csz * (A.estimator i + PP.hot i) :=
+    le_trans (A.residual_bound i) (mul_le_mul_of_nonneg_left (by linarith) hCsz)
+  -- the gradient of the error against the conforming average
+  have hsplit : ‖PP.grad E.p.u - PP.grad (PP.ustar i)‖
+      ≤ ‖PP.grad (E.p.u - A.avg i (PP.ustar i))‖
+        + ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖ := by
+    rw [map_sub,
+      show PP.grad E.p.u - PP.grad (PP.ustar i)
+        = (PP.grad E.p.u - PP.grad (A.avg i (PP.ustar i)))
+          - (PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))) from by abel]
+    exact norm_sub_le _ _
+  have hstab2 : A.Cst * (‖M.Cinv (E.p.σ - (E.q i).σₕ)
+        - PP.grad (E.p.u - A.avg i (PP.ustar i)) + (E.p.γ - (E.q i).γₕ)‖
+        + A.resG (E.p.σ - (E.q i).σₕ) + ‖A.skw (E.p.σ - (E.q i).σₕ)‖)
+      ≤ A.Cst * ((A.estimator i + Real.sqrt A.Cavg * A.estimator i)
+        + A.Csz * (A.estimator i + PP.hot i) + A.estimator i) := by
+    refine mul_le_mul_of_nonneg_left ?_ hCst
+    rw [hSk]
+    linarith [hres1', hJ, hRle, hc1, hc3]
+  linarith [hstab, hstab2, hsplit, hJ, hη0, hhot0,
+    mul_nonneg hCst hhot0, mul_nonneg (mul_nonneg hCst hsqC) hhot0,
+    mul_nonneg (mul_nonneg hCst hCsz) hhot0, mul_nonneg hsqC hhot0,
+    mul_nonneg (mul_nonneg hCst hCsz) hη0]
 
 /-- **Theorem 6.4** (p. 50): `|κ - κ*ₕ| ≲ η² + h.o.t.` for sufficiently small `h`, where
 the higher-order terms are `(h.o.t.)²` of Theorem 6.2, `‖u - u*ₕ‖₀²` and `(κ - κ*ₕ)²`. -/
@@ -235,6 +333,7 @@ example (μ : ℝ) (E : EigenpairFamily trivialFamily (trivialMaterial μ))
       have hpos : 0 < ‖s‖ := norm_pos_iff.mpr hs
       nlinarith
   Cst := 2
+  Cst_nonneg := by norm_num
   stab := fun s v _ g hg => by
     simp only [(Submodule.mem_bot ℝ).mp hg, trivialMaterial, ContinuousLinearMap.id_apply,
       trivialPostprocessing, LinearMap.neg_apply, LinearMap.id_coe, id_eq, norm_neg,
@@ -257,6 +356,7 @@ example (μ : ℝ) (E : EigenpairFamily trivialFamily (trivialMaterial μ))
   avg := fun _ v => v
   avg_mem := fun _ _ => Submodule.mem_top
   Cavg := 0
+  Cavg_nonneg := le_rfl
   avg_est := fun n v _ => by simp
   ustar_ne := fun _ => by simp [trivialPostprocessing]
 
