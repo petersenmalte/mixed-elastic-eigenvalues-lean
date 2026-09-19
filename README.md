@@ -30,8 +30,8 @@ Three layers, in increasing distance from the thesis's proofs:
    Lean statements over abstract families of discrete spaces, with every finite
    element property (stability, approximation, postprocessing, interpolation) as a
    typed hypothesis (`structure`), each with a trivial model showing the hypotheses are
-   satisfiable. Theorem 4.10 is proved from Lemma 4.9 and Theorem 5.7 from Lemma 5.6;
-   the other proofs are open (`sorry`, each with a comment on what the proof in the
+   satisfiable. Theorems 4.10, 5.1 and 5.7 are proved; the remaining proofs (Theorems
+   3.1, 4.7, 6.2, 6.4) are open (`sorry`, each with a comment on what the proof in the
    thesis needs).
 
 | Lean file / declaration | Thesis | Source | Status |
@@ -57,7 +57,9 @@ Three layers, in increasing distance from the thesis's proofs:
 | `CeaHypotheses.coercive_discrete` | coercivity on `ker(Bₕ + Cₕ)`, p. 15 | thesis | proved |
 | `Statements/Boffi.lean`: `BoffiHypotheses`, `uniform_convergence` | Theorem 4.7, Def. 4.4–4.6, pp. 27–28 | [3, Thm 14.6] | `sorry`: reduces to Theorem 3.1 plus approximability; strong approximability of `X⁰` added as hypothesis |
 | `Statements/EigenvalueRate.lean`: `EigenfunctionRates`, `eigenvalue_rate` | Theorem 4.10, p. 30 | thesis | proved from Lemma 4.9 and the rate hypotheses (squared form, see errata) |
-| `Statements/Postprocessing.lean`: `Postprocessing`, `PostprocessingRates`, `postprocessed_eigenfunction_rate` | (52), (53), Theorem 5.1, pp. 37–40 | thesis, [18], [24] | `sorry`: Hilbert space argument with (51), (55), (57), (58), Poincaré and inverse estimates as hypotheses |
+| `Statements/Postprocessing.lean`: `Postprocessing`, `PostprocessingRates` | (52), (53), pp. 37–38 | thesis, [18], [24] | definitions (hypotheses) |
+| `proj_unique`, `proj_eq_self`, `proj_sub`, `pstar_eq`, `ph_ustar` | (50), (51), (52), p. 36 | thesis | proved |
+| `postprocessed_eigenfunction_rate` | Theorem 5.1, pp. 38–40 | thesis, [18], [24] | proved from (51), (55), (57), (58), Poincaré and inverse estimates |
 | `Statements/PostprocessedEigenvalue.lean`: `PostprocessedEigenvalueRates`, `postprocessed_eigenvalue_rate` | Theorem 5.7, p. 43 | thesis | proved from Lemma 5.6, the rate hypotheses and a Rayleigh-quotient bound for `κ*ₕ`, for `h ≤ h₀` (squared form, see errata) |
 | `Statements/APosteriori.lean`: `APosterioriData`, `estimatorSq`, `estimator`, `Postprocessing.hot` | estimator `η`, (62), (67), pp. 44–48 | thesis, [11] | definitions |
 | `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | `sorry`: Lemma 6.1 (residual estimates with Scott–Zhang) plus (67) |
@@ -78,10 +80,11 @@ The [CI workflow](https://github.com/petersenmalte/mixed-elastic-eigenvalues-lea
 
 1. `lake build` of every module under `MixedElasticEigenvalues/` (the `globs` in
    `lakefile.toml` make sure that files that are not imported are still checked);
-2. `scripts/check_no_sorry.sh`: fails if `sorry` occurs in `Material.lean`,
-   `EigenvalueIdentities.lean`, `Statements/Framework.lean`,
-   `Statements/EigenvalueRate.lean` or `Statements/PostprocessedEigenvalue.lean`, or if
-   `axiom` / `native_decide` occur anywhere;
+2. `scripts/check_no_sorry.sh`: fails if `sorry` occurs in any of the proved modules
+   (`Material.lean`, `EigenvalueIdentities.lean`, `Statements/Framework.lean`,
+   `Statements/EigenvalueRate.lean`, `Statements/Postprocessing.lean`,
+   `Statements/PostprocessedEigenvalue.lean`), or if `axiom` / `native_decide` occur
+   anywhere;
 3. the axiom audit `MixedElasticEigenvalues/Axioms.lean` (run during `lake build` and again by
    `scripts/check_axioms.sh`): `#print axioms` for every declaration of the proved
    modules; the build fails if any axiom other than `propext`, `Classical.choice` and
