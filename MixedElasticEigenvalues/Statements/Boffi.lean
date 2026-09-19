@@ -7,7 +7,8 @@ Statement of Theorem 4.7 (p. 28, [3, Theorem 14.6]) in the abstract framework: w
 approximability (Definition 4.4), strong approximability (Definition 4.5) and the Fortid
 condition (Definition 4.6) imply uniform convergence of the solution operators
 `R, S, T` of the source problem, `‖Rf - Rₕf‖₀ + ‖Sf - Sₕf‖₀ + ‖Tf - Tₕf‖₀ ≤ C(h) ‖f‖₀`
-with `C(h) → 0`. The proof is left open (`sorry`).
+with `C(h) → 0`. Proved from `cea_estimate` (Theorem 3.1) together with the
+approximability hypotheses and the regularity estimate.
 -/
 
 namespace MixedElasticEigenvalues
@@ -39,18 +40,23 @@ structure BoffiHypotheses (D : DiscreteFamily div X S₀ ι) (M : MaterialOperat
   sol : ∀ f : U, MixedSource div X S₀ M f
   dsol : ∀ (i : ι) (f : U), DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f
   regH : H → ℝ
+  regH_nonneg : ∀ τ, 0 ≤ regH τ
   regU : U → ℝ
+  regU_nonneg : ∀ v, 0 ≤ regU v
   Creg : ℝ
+  Creg_nonneg : 0 ≤ Creg
   reg : ∀ f, regH (sol f).σ + regU (sol f).u + regH (sol f).γ ≤ Creg * ‖f‖
   CW : ι → ℝ
   CW_tendsto : Tendsto CW D.l (𝓝 0)
   weak : ∀ i τ, IsDiscreteKernel div (D.S i) (D.Uh i) (D.Xh i) τ → ∀ f,
     ⟪div τ, (sol f).u⟫_ℝ ≤ CW i * Real.sqrt ⟪M.Cinv τ, τ⟫_ℝ * regU (sol f).u
   CS : ι → ℝ
+  CS_nonneg : ∀ i, 0 ≤ CS i
   CS_tendsto : Tendsto CS D.l (𝓝 0)
   strong : ∀ i f, ∃ vₕ ∈ D.Uh i, ‖(sol f).u - vₕ‖ ≤ CS i * regU (sol f).u
   strongX : ∀ i f, ∃ ηₕ ∈ D.Xh i, ‖(sol f).γ - ηₕ‖ ≤ CS i * regH (sol f).γ
   CF : ι → ℝ
+  CF_nonneg : ∀ i, 0 ≤ CF i
   CF_tendsto : Tendsto CF D.l (𝓝 0)
   fortid : ∀ i f, ‖(sol f).σ - stab.fort i (sol f).σ‖ ≤ CF i * regH (sol f).σ
 
@@ -63,11 +69,52 @@ theorem uniform_convergence (D : DiscreteFamily div X S₀ ι) (M : MaterialOper
     ∃ C : ι → ℝ, Tendsto C D.l (𝓝 0) ∧ ∀ (i : ι) (f : U),
       ‖(hyp.sol f).σ - (hyp.dsol i f).σₕ‖ + ‖(hyp.sol f).u - (hyp.dsol i f).uₕ‖
         + ‖(hyp.sol f).γ - (hyp.dsol i f).γₕ‖ ≤ C i * ‖f‖ := by
-  -- Not proved here. With the quasi-optimality argument of Theorem 3.1 (`cea_estimate`,
-  -- itself open), `‖Rf - Rₕf‖ + ‖Sf - Sₕf‖ + ‖Tf - Tₕf‖` is bounded by a constant times
-  -- `‖σ - fort σ‖ + inf ‖u - vₕ‖ + inf ‖γ - ηₕ‖`, which by `fortid`, `strong`, `strongX`
-  -- and `reg` is at most `C₀ (CF i + CS i) ‖f‖`; hence `C i := C₀ (CF i + CS i) → 0`.
-  sorry
+  -- Theorem 3.1 (`cea_estimate`) bounds the error by the three best approximations;
+  -- these are bounded by `fortid`, `strong` and `strongX`, and `reg` turns the regularity
+  -- norms into `Creg ‖f‖`. Hence `C i := C₀ (CF i + CS i) Creg → 0`.
+  obtain ⟨C₀, hC₀, hest⟩ := cea_estimate D M hyp.stab
+  refine ⟨fun i => C₀ * (hyp.CF i + hyp.CS i) * hyp.Creg, ?_, fun i f => ?_⟩
+  · have h1 : Tendsto (fun i => hyp.CF i + hyp.CS i) D.l (𝓝 0) := by
+      simpa using hyp.CF_tendsto.add hyp.CS_tendsto
+    simpa using (h1.const_mul C₀).mul_const hyp.Creg
+  · have h := hest i f (hyp.sol f) (hyp.dsol i f)
+    -- the three best approximations
+    have hσ : Metric.infDist (hyp.sol f).σ (D.S i : Set H)
+        ≤ hyp.CF i * hyp.regH (hyp.sol f).σ := by
+      refine le_trans (Metric.infDist_le_dist_of_mem (hyp.stab.fort_mem i (hyp.sol f).σ)) ?_
+      rw [dist_eq_norm]
+      exact hyp.fortid i f
+    obtain ⟨vₕ, hvmem, hv⟩ := hyp.strong i f
+    have hu : Metric.infDist (hyp.sol f).u (D.Uh i : Set U)
+        ≤ hyp.CS i * hyp.regU (hyp.sol f).u := by
+      refine le_trans (Metric.infDist_le_dist_of_mem hvmem) ?_
+      rw [dist_eq_norm]
+      exact hv
+    obtain ⟨ηₕ, hηmem, hη⟩ := hyp.strongX i f
+    have hγ : Metric.infDist (hyp.sol f).γ (D.Xh i : Set H)
+        ≤ hyp.CS i * hyp.regH (hyp.sol f).γ := by
+      refine le_trans (Metric.infDist_le_dist_of_mem hηmem) ?_
+      rw [dist_eq_norm]
+      exact hη
+    -- the regularity estimate turns them into `(CF i + CS i) * Creg * ‖f‖`
+    have hFS : (0:ℝ) ≤ hyp.CF i + hyp.CS i := by
+      linarith [hyp.CF_nonneg i, hyp.CS_nonneg i]
+    have hstep := mul_le_mul_of_nonneg_left (hyp.reg f) hFS
+    have hsum : hyp.CF i * hyp.regH (hyp.sol f).σ + hyp.CS i * hyp.regU (hyp.sol f).u
+        + hyp.CS i * hyp.regH (hyp.sol f).γ ≤ (hyp.CF i + hyp.CS i) * (hyp.Creg * ‖f‖) := by
+      linarith [hstep,
+        mul_nonneg (hyp.CS_nonneg i) (hyp.regH_nonneg (hyp.sol f).σ),
+        mul_nonneg (hyp.CF_nonneg i) (hyp.regU_nonneg (hyp.sol f).u),
+        mul_nonneg (hyp.CF_nonneg i) (hyp.regH_nonneg (hyp.sol f).γ)]
+    calc ‖(hyp.sol f).σ - (hyp.dsol i f).σₕ‖ + ‖(hyp.sol f).u - (hyp.dsol i f).uₕ‖
+          + ‖(hyp.sol f).γ - (hyp.dsol i f).γₕ‖
+        ≤ C₀ * (Metric.infDist (hyp.sol f).σ (D.S i : Set H)
+            + Metric.infDist (hyp.sol f).u (D.Uh i : Set U)
+            + Metric.infDist (hyp.sol f).γ (D.Xh i : Set H)) := h
+      _ ≤ C₀ * ((hyp.CF i + hyp.CS i) * (hyp.Creg * ‖f‖)) := by
+          refine mul_le_mul_of_nonneg_left ?_ hC₀.le
+          linarith [hσ, hu, hγ, hsum]
+      _ = C₀ * (hyp.CF i + hyp.CS i) * hyp.Creg * ‖f‖ := by ring
 
 /-- The hypotheses of Theorem 4.7 are satisfiable in the trivial model (all constants
 `C(h)` equal to zero, since the discrete solutions coincide with the continuous ones). -/
@@ -77,8 +124,11 @@ example (μ : ℝ) (stab : CeaHypotheses trivialFamily (trivialMaterial μ))
   sol := trivialSource μ
   dsol := fun n f => trivialDiscreteSource μ f n
   regH := fun x => ‖x‖
+  regH_nonneg := fun _ => norm_nonneg _
   regU := fun x => ‖x‖
+  regU_nonneg := fun _ => norm_nonneg _
   Creg := 2
+  Creg_nonneg := by norm_num
   reg := fun f => by simp [trivialSource]; linarith [norm_nonneg f]
   CW := fun _ => 0
   CW_tendsto := tendsto_const_nhds
@@ -88,10 +138,12 @@ example (μ : ℝ) (stab : CeaHypotheses trivialFamily (trivialMaterial μ))
       simpa [inner_self_eq_zero] using this
     simp [h0]
   CS := fun _ => 0
+  CS_nonneg := fun _ => le_rfl
   CS_tendsto := tendsto_const_nhds
   strong := fun i f => ⟨(trivialSource μ f).u, Submodule.mem_top, by simp⟩
   strongX := fun i f => ⟨0, Submodule.zero_mem _, by simp [trivialSource]⟩
   CF := fun _ => 0
+  CF_nonneg := fun _ => le_rfl
   CF_tendsto := tendsto_const_nhds
   fortid := fun i f => by simp [hfort]
 

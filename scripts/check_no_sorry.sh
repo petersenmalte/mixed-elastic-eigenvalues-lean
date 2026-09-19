@@ -11,6 +11,7 @@ proven=(
   MixedElasticEigenvalues/Statements/EigenvalueRate.lean
   MixedElasticEigenvalues/Statements/PostprocessedEigenvalue.lean
   MixedElasticEigenvalues/Statements/Postprocessing.lean
+  MixedElasticEigenvalues/Statements/Boffi.lean
 )
 
 status=0

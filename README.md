@@ -30,9 +30,9 @@ Three layers, in increasing distance from the thesis's proofs:
    Lean statements over abstract families of discrete spaces, with every finite
    element property (stability, approximation, postprocessing, interpolation) as a
    typed hypothesis (`structure`), each with a trivial model showing the hypotheses are
-   satisfiable. Theorems 4.10, 5.1, 5.7 and the uniqueness and error estimate of Theorem
-   3.1 are proved; still open (`sorry`, each with a comment on what the proof in the
-   thesis needs) are the existence part of Theorem 3.1 and Theorems 4.7, 6.2, 6.4.
+   satisfiable. Theorems 4.7, 4.10, 5.1, 5.7 and the uniqueness and error estimate of
+   Theorem 3.1 are proved; still open (`sorry`, each with a comment on what the proof in
+   the thesis needs) are the existence part of Theorem 3.1 and Theorems 6.2 and 6.4.
 
 | Lean file / declaration | Thesis | Source | Status |
 |---|---|---|---|
@@ -58,7 +58,8 @@ Three layers, in increasing distance from the thesis's proofs:
 | `cea_unique` | uniqueness part of Theorem 3.1, p. 16 | thesis, [9] | proved from (19), (16) and (20) |
 | `cea_quasi_optimal`, `cea_estimate` | estimate of Theorem 3.1, p. 16 | [5, Thm 3.1], [9] | proved (best-approximation form, and the `inf` form of the thesis) |
 | `cea_existence` | existence part of Theorem 3.1, p. 16 | [9] | `sorry`: needs the three equations assembled into one linear map plus `LinearMap.injective_iff_surjective` |
-| `Statements/Boffi.lean`: `BoffiHypotheses`, `uniform_convergence` | Theorem 4.7, Def. 4.4–4.6, pp. 27–28 | [3, Thm 14.6] | `sorry`: reduces to Theorem 3.1 plus approximability; strong approximability of `X⁰` added as hypothesis |
+| `Statements/Boffi.lean`: `BoffiHypotheses` | Def. 4.4–4.6, pp. 27–28 | [3] | definitions; strong approximability of `X⁰` added as hypothesis |
+| `uniform_convergence` | Theorem 4.7, p. 28 | [3, Thm 14.6] | proved from `cea_estimate` plus approximability and regularity |
 | `Statements/EigenvalueRate.lean`: `EigenfunctionRates`, `eigenvalue_rate` | Theorem 4.10, p. 30 | thesis | proved from Lemma 4.9 and the rate hypotheses (squared form, see errata) |
 | `Statements/Postprocessing.lean`: `Postprocessing`, `PostprocessingRates` | (52), (53), pp. 37–38 | thesis, [18], [24] | definitions (hypotheses) |
 | `proj_unique`, `proj_eq_self`, `proj_sub`, `pstar_eq`, `ph_ustar` | (50), (51), (52), p. 36 | thesis | proved |
@@ -89,8 +90,8 @@ The [CI workflow](https://github.com/petersenmalte/mixed-elastic-eigenvalues-lea
 2. `scripts/check_no_sorry.sh`: fails if `sorry` occurs in any of the proved modules
    (`Material.lean`, `EigenvalueIdentities.lean`, `Statements/Framework.lean`,
    `Statements/EigenvalueRate.lean`, `Statements/Postprocessing.lean`,
-   `Statements/PostprocessedEigenvalue.lean`), or if `axiom` / `native_decide` occur
-   anywhere;
+   `Statements/PostprocessedEigenvalue.lean`, `Statements/Boffi.lean`), or if
+   `axiom` / `native_decide` occur anywhere;
 3. the axiom audit `MixedElasticEigenvalues/Axioms.lean` (run during `lake build` and again by
    `scripts/check_axioms.sh`): `#print axioms` for every declaration of the proved
    modules; the build fails if any axiom other than `propext`, `Classical.choice` and
