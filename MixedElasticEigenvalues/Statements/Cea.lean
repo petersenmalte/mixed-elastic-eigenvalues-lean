@@ -3,10 +3,17 @@ import MixedElasticEigenvalues.Statements.Framework
 /-!
 # Theorem 3.1: quasi-optimality of the discrete source problem
 
-Statement of Theorem 3.1 (p. 16, [5, Theorem 3.1]) in the abstract framework. The finite
-element input — inclusion of the kernel (19), discrete inf-sup condition (20), coercivity
-(16), continuity of `a`, and an `L²`-quasi-optimal Fortin operator — is collected in
-`CeaHypotheses`. The proof is left open (`sorry`), see the comment at `cea_estimate`.
+Theorem 3.1 (p. 16, [5, Theorem 3.1]) in the abstract framework. The finite element
+input — inclusion of the kernel (19), discrete inf-sup condition (20), coercivity (16),
+continuity of `a`, and an `L²`-quasi-optimal Fortin operator — is collected in
+`CeaHypotheses`.
+
+The theorem is split into its three assertions:
+
+* `cea_unique` — the discrete problem (17) has at most one solution. Proved.
+* `cea_quasi_optimal` / `cea_estimate` — the error estimate, in best-approximation form
+  and in the `inf` form of the thesis. Proved.
+* `cea_existence` — existence of a discrete solution. Open (`sorry`); see there.
 -/
 
 namespace MixedElasticEigenvalues
@@ -34,6 +41,7 @@ variable {H U : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
   Lee [21, Theorem 2], cf. (35). -/
 structure CeaHypotheses (D : DiscreteFamily div X S₀ ι) (M : MaterialOperator X μ) where
   Ma : ℝ
+  Ma_nonneg : 0 ≤ Ma
   a_bound : ∀ σ τ : H, |⟪M.Cinv σ, τ⟫_ℝ| ≤ Ma * ‖σ‖ * ‖τ‖
   kernel_incl : ∀ i τ, IsDiscreteKernel div (D.S i) (D.Uh i) (D.Xh i) τ → IsKernel div X S₀ τ
   α : ℝ
@@ -48,6 +56,7 @@ structure CeaHypotheses (D : DiscreteFamily div X S₀ ι) (M : MaterialOperator
   fortin : ∀ i τ, ∀ v ∈ D.Uh i, ∀ η ∈ D.Xh i,
     ⟪div (τ - fort i τ), v⟫_ℝ + ⟪τ - fort i τ, η⟫_ℝ = 0
   Cfort : ℝ
+  Cfort_nonneg : 0 ≤ Cfort
   fort_approx : ∀ i τ, ‖τ - fort i τ‖ ≤ Cfort * Metric.infDist τ (D.S i : Set H)
 
 /-- Coercivity of `a` on the discrete kernel (p. 15): a direct consequence of the inclusion
@@ -58,35 +67,299 @@ theorem CeaHypotheses.coercive_discrete {D : DiscreteFamily div X S₀ ι}
     hyp.α * ‖τ‖ ^ 2 ≤ ⟪M.Cinv τ, τ⟫_ℝ :=
   hyp.coercive τ (hyp.kernel_incl i τ hτ)
 
-/-- **Theorem 3.1** (p. 16, [5, Theorem 3.1]). Suppose the spaces `Sₕ, Uₕ, Xₕ` satisfy the
-inclusion of the kernel property (19) and the inf-sup condition (20). Then (17) admits a
-unique solution `(σₕ, uₕ, γₕ)` and
-`‖σ - σₕ‖₀ + ‖u - uₕ‖₀ + ‖γ - γₕ‖₀ ≤ C (inf ‖σ - τₕ‖₀ + inf ‖u - vₕ‖₀ + inf ‖γ - ηₕ‖₀)`
-with `C` independent of the mesh and of the right-hand side `f`. -/
+/-- An element of `ker (Bₕ + Cₕ)` is divergence free, because `div Σₕ ⊆ Uₕ` for Falk's
+element (p. 23) makes `div τₕ` orthogonal to itself (p. 28). -/
+theorem div_eq_zero_of_isDiscreteKernel (D : DiscreteFamily div X S₀ ι) (i : ι) {τ : H}
+    (hτ : IsDiscreteKernel div (D.S i) (D.Uh i) (D.Xh i) τ) : div τ = 0 :=
+  inner_self_eq_zero.mp (hτ.2.1 (div τ) (D.div_mem i τ hτ.1))
+
+/-- Uniqueness part of **Theorem 3.1** (p. 16): the discrete problem (17) has at most one
+solution. Only the inclusion of the kernel (19), the coercivity (16) and the discrete
+inf-sup condition (20) are used. -/
+theorem cea_unique {D : DiscreteFamily div X S₀ ι} {M : MaterialOperator X μ}
+    (hyp : CeaHypotheses D M) (i : ι) (f : U)
+    (q q' : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f) :
+    q.σₕ = q'.σₕ ∧ q.uₕ = q'.uₕ ∧ q.γₕ = q'.γₕ := by
+  set e := q.σₕ - q'.σₕ with he
+  have hemem : e ∈ D.S i := (D.S i).sub_mem q.σₕ_mem q'.σₕ_mem
+  have hker : IsDiscreteKernel div (D.S i) (D.Uh i) (D.Xh i) e := by
+    refine ⟨hemem, fun v hv => ?_, fun η hη => ?_⟩
+    · rw [he, map_sub, inner_sub_left, q.eq₂ v hv, q'.eq₂ v hv, sub_self]
+    · rw [he, inner_sub_left, q.eq₃ η hη, q'.eq₃ η hη, sub_self]
+  have hdive : div e = 0 := div_eq_zero_of_isDiscreteKernel D i hker
+  -- the stress components agree by coercivity on the discrete kernel
+  have hz : ∀ (r : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f),
+      ⟪M.Cinv r.σₕ, e⟫_ℝ = 0 := by
+    intro r
+    have h1 := r.eq₁ e hemem
+    have h2 : ⟪div e, r.uₕ⟫_ℝ = 0 := by rw [hdive, inner_zero_left]
+    have h3 : ⟪r.γₕ, e⟫_ℝ = 0 := by
+      rw [real_inner_comm]; exact hker.2.2 r.γₕ r.γₕ_mem
+    linarith
+  have hzero : ⟪M.Cinv e, e⟫_ℝ = 0 := by
+    rw [he, map_sub, inner_sub_left, hz q, hz q', sub_zero]
+  have hcoer := hyp.coercive e (hyp.kernel_incl i e hker)
+  have hσ : q.σₕ = q'.σₕ := by
+    have hn : ‖e‖ = 0 := by
+      rw [hzero] at hcoer
+      have h1 : ‖e‖ ^ 2 ≤ 0 := by
+        by_contra hc
+        push_neg at hc
+        nlinarith [mul_pos hyp.α_pos hc]
+      exact sq_eq_zero_iff.mp (le_antisymm h1 (sq_nonneg _))
+    have := norm_eq_zero.mp hn
+    rw [he] at this
+    exact sub_eq_zero.mp this
+  -- the remaining components agree by the discrete inf-sup condition
+  set w := q.uₕ - q'.uₕ with hw
+  set g := q.γₕ - q'.γₕ with hg
+  have hwmem : w ∈ D.Uh i := (D.Uh i).sub_mem q.uₕ_mem q'.uₕ_mem
+  have hgmem : g ∈ D.Xh i := (D.Xh i).sub_mem q.γₕ_mem q'.γₕ_mem
+  have hzero2 : ∀ τ ∈ D.S i, ⟪div τ, w⟫_ℝ + ⟪g, τ⟫_ℝ = 0 := by
+    intro τ hτ
+    have h1 := q.eq₁ τ hτ
+    have h2 := q'.eq₁ τ hτ
+    rw [hσ] at h1
+    rw [hw, hg, inner_sub_right, inner_sub_left]
+    linarith
+  obtain ⟨τ, hτS, hτ0, hbound⟩ := hyp.infsup i w hwmem g hgmem
+  have hnτ : 0 < hdivNorm div τ :=
+    lt_of_lt_of_le (norm_pos_iff.mpr hτ0) (norm_le_hdivNorm div τ)
+  have hrhs : ⟪div τ, w⟫_ℝ + ⟪τ, g⟫_ℝ = 0 := by
+    rw [real_inner_comm g τ]; exact hzero2 τ hτS
+  have hsum : ‖w‖ + ‖g‖ ≤ 0 := by
+    by_contra hc
+    push_neg at hc
+    nlinarith [mul_pos (mul_pos hyp.β_pos hnτ) hc, hbound, hrhs]
+  refine ⟨hσ, ?_, ?_⟩
+  · have : ‖w‖ = 0 := le_antisymm (by linarith [norm_nonneg g]) (norm_nonneg w)
+    have := norm_eq_zero.mp this
+    rw [hw] at this
+    exact sub_eq_zero.mp this
+  · have : ‖g‖ = 0 := le_antisymm (by linarith [norm_nonneg w]) (norm_nonneg g)
+    have := norm_eq_zero.mp this
+    rw [hg] at this
+    exact sub_eq_zero.mp this
+
+/-- Quasi-optimality of **Theorem 3.1** (p. 16, [5, Theorem 3.1]) in best-approximation
+form: for every `vₕ ∈ Uₕ` and `ηₕ ∈ Xₕ`,
+`‖σ - σₕ‖₀ + ‖u - uₕ‖₀ + ‖γ - γₕ‖₀ ≤ C (dist(σ, Σₕ) + ‖u - vₕ‖₀ + ‖γ - ηₕ‖₀)`,
+with `C` independent of the mesh and of the right-hand side `f`. Taking the infimum over
+`vₕ` and `ηₕ` gives the form stated in the thesis, see `cea_estimate`. -/
+theorem cea_quasi_optimal (D : DiscreteFamily div X S₀ ι) (M : MaterialOperator X μ)
+    (hyp : CeaHypotheses D M) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (i : ι) (f : U) (p : MixedSource div X S₀ M f)
+      (q : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f),
+      ∀ vₕ ∈ D.Uh i, ∀ ηₕ ∈ D.Xh i,
+        ‖p.σ - q.σₕ‖ + ‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖
+          ≤ C * (Metric.infDist p.σ (D.S i : Set H) + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by
+  have ha := hyp.α_pos
+  have hb := hyp.β_pos
+  have hMa := hyp.Ma_nonneg
+  have hCf := hyp.Cfort_nonneg
+  have hab : 0 < hyp.α * hyp.β := mul_pos ha hb
+  obtain ⟨K, hK⟩ : ∃ K, K = hyp.Cfort * (hyp.β + hyp.Ma) * (hyp.α + hyp.Ma)
+      + (hyp.β + hyp.Ma) + hyp.α * hyp.β + hyp.α := ⟨_, rfl⟩
+  have hK0 : 0 ≤ K := by rw [hK]; positivity
+  refine ⟨K / (hyp.α * hyp.β) + 1, by positivity, fun i f p q vₕ hv ηₕ hη => ?_⟩
+  set Pi := hyp.fort i p.σ with hPi
+  set e := q.σₕ - Pi with he
+  have hemem : e ∈ D.S i := (D.S i).sub_mem q.σₕ_mem (hyp.fort_mem i p.σ)
+  -- the Fortin property, separately in `v` and in `η`
+  have hfortv : ∀ v ∈ D.Uh i, ⟪div (p.σ - Pi), v⟫_ℝ = 0 := by
+    intro v hv'
+    have h := hyp.fortin i p.σ v hv' 0 (Submodule.zero_mem _)
+    rw [hPi]
+    simpa using h
+  have hfortη : ∀ η ∈ D.Xh i, ⟪p.σ - Pi, η⟫_ℝ = 0 := by
+    intro η hη'
+    have h := hyp.fortin i p.σ 0 (Submodule.zero_mem _) η hη'
+    rw [hPi]
+    simpa using h
+  -- `σₕ - Πσ` lies in the discrete kernel, hence is divergence free
+  have hker : IsDiscreteKernel div (D.S i) (D.Uh i) (D.Xh i) e := by
+    refine ⟨hemem, fun v hv' => ?_, fun η hη' => ?_⟩
+    · have h1 := q.eq₂ v hv'
+      have h2 := p.eq₂ v
+      have h3 := hfortv v hv'
+      rw [map_sub, inner_sub_left] at h3
+      rw [he, map_sub, inner_sub_left, h1]
+      linarith
+    · have h1 := q.eq₃ η hη'
+      have h2 := p.eq₃ η (D.Xh_le i hη')
+      have h3 := hfortη η hη'
+      rw [inner_sub_left] at h3
+      rw [he, inner_sub_left, h1]
+      linarith
+  have hdive : div e = 0 := div_eq_zero_of_isDiscreteKernel D i hker
+  have hz1 : ⟪div e, q.uₕ⟫_ℝ = 0 := by rw [hdive, inner_zero_left]
+  have hz2 : ⟪div e, p.u⟫_ℝ = 0 := by rw [hdive, inner_zero_left]
+  have hz3 : ⟪q.γₕ, e⟫_ℝ = 0 := by rw [real_inner_comm]; exact hker.2.2 q.γₕ q.γₕ_mem
+  have hz4 : ⟪ηₕ, e⟫_ℝ = 0 := by rw [real_inner_comm]; exact hker.2.2 ηₕ hη
+  have hq1 := q.eq₁ e hemem
+  have hp1 := p.eq₁ e (D.S_le i hemem)
+  have hA1 : ⟪M.Cinv q.σₕ, e⟫_ℝ = 0 := by rw [hz1, hz3] at hq1; linarith
+  have hA2 : ⟪M.Cinv p.σ, e⟫_ℝ = -⟪p.γ, e⟫_ℝ := by rw [hz2] at hp1; linarith
+  have hkey : ⟪M.Cinv e, e⟫_ℝ = ⟪p.γ - ηₕ, e⟫_ℝ + ⟪M.Cinv (p.σ - Pi), e⟫_ℝ := by
+    have t1 : ⟪M.Cinv e, e⟫_ℝ = ⟪M.Cinv q.σₕ, e⟫_ℝ - ⟪M.Cinv Pi, e⟫_ℝ := by
+      rw [he, map_sub, inner_sub_left]
+    have t2 : ⟪M.Cinv (p.σ - Pi), e⟫_ℝ = ⟪M.Cinv p.σ, e⟫_ℝ - ⟪M.Cinv Pi, e⟫_ℝ := by
+      rw [map_sub, inner_sub_left]
+    have t3 : ⟪p.γ - ηₕ, e⟫_ℝ = ⟪p.γ, e⟫_ℝ - ⟪ηₕ, e⟫_ℝ := by rw [inner_sub_left]
+    rw [t1, t2, t3, hA1, hA2, hz4]
+    ring
+  -- coercivity on the discrete kernel bounds `‖σₕ - Πσ‖`
+  have hcoer := hyp.coercive e (hyp.kernel_incl i e hker)
+  have hb1 : ⟪p.γ - ηₕ, e⟫_ℝ ≤ ‖p.γ - ηₕ‖ * ‖e‖ := real_inner_le_norm _ _
+  have hb2 : ⟪M.Cinv (p.σ - Pi), e⟫_ℝ ≤ hyp.Ma * ‖p.σ - Pi‖ * ‖e‖ :=
+    le_trans (le_abs_self _) (hyp.a_bound _ _)
+  have hnorm : hyp.α * ‖e‖ ≤ ‖p.γ - ηₕ‖ + hyp.Ma * ‖p.σ - Pi‖ := by
+    rcases eq_or_lt_of_le (norm_nonneg e) with h0 | h0
+    · rw [← h0, mul_zero]
+      have := mul_nonneg hMa (norm_nonneg (p.σ - Pi))
+      linarith [norm_nonneg (p.γ - ηₕ)]
+    · have hsq : hyp.α * ‖e‖ ^ 2 ≤ (‖p.γ - ηₕ‖ + hyp.Ma * ‖p.σ - Pi‖) * ‖e‖ := by
+        rw [hkey] at hcoer
+        linarith [hb1, hb2]
+      have h2 : (hyp.α * ‖e‖) * ‖e‖ ≤ (‖p.γ - ηₕ‖ + hyp.Ma * ‖p.σ - Pi‖) * ‖e‖ := by
+        linarith [hsq]
+      exact le_of_mul_le_mul_right h2 h0
+  have hS : ‖p.σ - Pi‖ ≤ hyp.Cfort * Metric.infDist p.σ (D.S i : Set H) := by
+    rw [hPi]; exact hyp.fort_approx i p.σ
+  have hAsig : ‖p.σ - q.σₕ‖ ≤ ‖p.σ - Pi‖ + ‖e‖ := by
+    have hrw : p.σ - q.σₕ = (p.σ - Pi) - e := by rw [he]; abel
+    rw [hrw]; exact norm_sub_le _ _
+  -- the discrete inf-sup condition bounds the displacement and the skew part
+  obtain ⟨τ, hτS, hτ0, hbound⟩ := hyp.infsup i (q.uₕ - vₕ) ((D.Uh i).sub_mem q.uₕ_mem hv)
+    (q.γₕ - ηₕ) ((D.Xh i).sub_mem q.γₕ_mem hη)
+  have hq1τ := q.eq₁ τ hτS
+  have hp1τ := p.eq₁ τ (D.S_le i hτS)
+  have hRHS : ⟪div τ, q.uₕ - vₕ⟫_ℝ + ⟪τ, q.γₕ - ηₕ⟫_ℝ
+      = ⟪M.Cinv (p.σ - q.σₕ), τ⟫_ℝ + ⟪div τ, p.u - vₕ⟫_ℝ + ⟪p.γ - ηₕ, τ⟫_ℝ := by
+    simp only [map_sub, inner_sub_left, inner_sub_right]
+    rw [real_inner_comm q.γₕ τ, real_inner_comm ηₕ τ]
+    linarith [hq1τ, hp1τ]
+  have hτle : ‖τ‖ ≤ hdivNorm div τ := norm_le_hdivNorm div τ
+  have hdτle : ‖div τ‖ ≤ hdivNorm div τ := norm_div_le_hdivNorm div τ
+  have hnτ : 0 < hdivNorm div τ := lt_of_lt_of_le (norm_pos_iff.mpr hτ0) hτle
+  have hinf : hyp.β * (‖q.uₕ - vₕ‖ + ‖q.γₕ - ηₕ‖)
+      ≤ hyp.Ma * ‖p.σ - q.σₕ‖ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖ := by
+    have hcs1 : ⟪M.Cinv (p.σ - q.σₕ), τ⟫_ℝ ≤ hyp.Ma * ‖p.σ - q.σₕ‖ * ‖τ‖ :=
+      le_trans (le_abs_self _) (hyp.a_bound _ _)
+    have hcs2 : ⟪div τ, p.u - vₕ⟫_ℝ ≤ ‖div τ‖ * ‖p.u - vₕ‖ := real_inner_le_norm _ _
+    have hcs3 : ⟪p.γ - ηₕ, τ⟫_ℝ ≤ ‖p.γ - ηₕ‖ * ‖τ‖ := real_inner_le_norm _ _
+    have m1 : hyp.Ma * ‖p.σ - q.σₕ‖ * ‖τ‖ ≤ hyp.Ma * ‖p.σ - q.σₕ‖ * hdivNorm div τ :=
+      mul_le_mul_of_nonneg_left hτle (mul_nonneg hMa (norm_nonneg _))
+    have m2 : ‖div τ‖ * ‖p.u - vₕ‖ ≤ hdivNorm div τ * ‖p.u - vₕ‖ :=
+      mul_le_mul_of_nonneg_right hdτle (norm_nonneg _)
+    have m3 : ‖p.γ - ηₕ‖ * ‖τ‖ ≤ ‖p.γ - ηₕ‖ * hdivNorm div τ :=
+      mul_le_mul_of_nonneg_left hτle (norm_nonneg _)
+    have hUp : hyp.β * (‖q.uₕ - vₕ‖ + ‖q.γₕ - ηₕ‖) * hdivNorm div τ
+        ≤ (hyp.Ma * ‖p.σ - q.σₕ‖ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) * hdivNorm div τ := by
+      linarith [hbound, hRHS, hcs1, hcs2, hcs3, m1, m2, m3]
+    exact le_of_mul_le_mul_right hUp hnτ
+  have hWtri : ‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖
+      ≤ (‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) + (‖q.uₕ - vₕ‖ + ‖q.γₕ - ηₕ‖) := by
+    have t1 : ‖p.u - q.uₕ‖ ≤ ‖p.u - vₕ‖ + ‖q.uₕ - vₕ‖ := by
+      have hrw : p.u - q.uₕ = (p.u - vₕ) - (q.uₕ - vₕ) := by abel
+      rw [hrw]; exact norm_sub_le _ _
+    have t2 : ‖p.γ - q.γₕ‖ ≤ ‖p.γ - ηₕ‖ + ‖q.γₕ - ηₕ‖ := by
+      have hrw : p.γ - q.γₕ = (p.γ - ηₕ) - (q.γₕ - ηₕ) := by abel
+      rw [hrw]; exact norm_sub_le _ _
+    linarith
+  -- assembly, with denominators cleared
+  obtain ⟨dσ, hdσ⟩ : ∃ d, d = Metric.infDist p.σ (D.S i : Set H) := ⟨_, rfl⟩
+  have hdσ0 : 0 ≤ dσ := by rw [hdσ]; exact Metric.infDist_nonneg
+  rw [← hdσ] at hS ⊢
+  have hA'' : hyp.α * ‖p.σ - q.σₕ‖ ≤ (hyp.α + hyp.Ma) * (hyp.Cfort * dσ) + ‖p.γ - ηₕ‖ := by
+    have h0 := mul_le_mul_of_nonneg_left hAsig ha.le
+    have h1 : hyp.α * ‖p.σ - Pi‖ ≤ hyp.α * (hyp.Cfort * dσ) :=
+      mul_le_mul_of_nonneg_left hS ha.le
+    have h2 : hyp.Ma * ‖p.σ - Pi‖ ≤ hyp.Ma * (hyp.Cfort * dσ) :=
+      mul_le_mul_of_nonneg_left hS hMa
+    linarith [h0, h1, h2, hnorm]
+  have hW' : hyp.β * (‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖)
+      ≤ hyp.β * (‖p.u - vₕ‖ + ‖p.γ - ηₕ‖)
+        + (hyp.Ma * ‖p.σ - q.σₕ‖ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by
+    have h0 := mul_le_mul_of_nonneg_left hWtri hb.le
+    linarith [h0, hinf]
+  have hexact : (hyp.α * hyp.β) * (‖p.σ - q.σₕ‖ + ‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖)
+      ≤ (hyp.Cfort * (hyp.β + hyp.Ma) * (hyp.α + hyp.Ma)) * dσ
+        + (hyp.α * hyp.β + hyp.α) * ‖p.u - vₕ‖
+        + ((hyp.β + hyp.Ma) + hyp.α * hyp.β + hyp.α) * ‖p.γ - ηₕ‖ := by
+    have e1 := mul_le_mul_of_nonneg_left hA'' hb.le
+    have e2 := mul_le_mul_of_nonneg_left hW' ha.le
+    have e3 := mul_le_mul_of_nonneg_left hA'' hMa
+    linarith [e1, e2, e3]
+  have hβMa : (0:ℝ) ≤ hyp.β + hyp.Ma := by linarith
+  have hαMa : (0:ℝ) ≤ hyp.α + hyp.Ma := by linarith
+  have hprod : (0:ℝ) ≤ hyp.Cfort * (hyp.β + hyp.Ma) * (hyp.α + hyp.Ma) :=
+    mul_nonneg (mul_nonneg hCf hβMa) hαMa
+  have hKb : (hyp.Cfort * (hyp.β + hyp.Ma) * (hyp.α + hyp.Ma)) * dσ
+      + (hyp.α * hyp.β + hyp.α) * ‖p.u - vₕ‖
+      + ((hyp.β + hyp.Ma) + hyp.α * hyp.β + hyp.α) * ‖p.γ - ηₕ‖
+      ≤ K * (dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by
+    have c1 : hyp.Cfort * (hyp.β + hyp.Ma) * (hyp.α + hyp.Ma) ≤ K := by
+      rw [hK]; linarith [hab, hβMa]
+    have c2 : hyp.α * hyp.β + hyp.α ≤ K := by rw [hK]; linarith [hprod, hβMa]
+    have c3 : (hyp.β + hyp.Ma) + hyp.α * hyp.β + hyp.α ≤ K := by rw [hK]; linarith [hprod]
+    linarith [mul_nonneg (sub_nonneg.mpr c1) hdσ0,
+      mul_nonneg (sub_nonneg.mpr c2) (norm_nonneg (p.u - vₕ)),
+      mul_nonneg (sub_nonneg.mpr c3) (norm_nonneg (p.γ - ηₕ))]
+  have hsum0 : 0 ≤ dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖ := by
+    linarith [norm_nonneg (p.u - vₕ), norm_nonneg (p.γ - ηₕ)]
+  have hfin := le_trans hexact hKb
+  calc ‖p.σ - q.σₕ‖ + ‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖
+      = ((hyp.α * hyp.β) * (‖p.σ - q.σₕ‖ + ‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖))
+          / (hyp.α * hyp.β) := by field_simp
+    _ ≤ (K * (dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖)) / (hyp.α * hyp.β) := by gcongr
+    _ = (K / (hyp.α * hyp.β)) * (dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by ring
+    _ ≤ (K / (hyp.α * hyp.β) + 1) * (dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by linarith [hsum0]
+
+/-- Existence for the discrete problem (17), p. 16. Not proved here: in the thesis it
+follows from Brezzi's splitting theorem [9]. In this abstract setting it follows from
+`cea_unique` together with the finite dimensionality of `Σₕ × Uₕ × Xₕ`, which requires
+assembling the three equations of (17) into a single linear map on the product space and
+applying `LinearMap.injective_iff_surjective`; that construction was not carried out. -/
+theorem cea_existence (D : DiscreteFamily div X S₀ ι) (M : MaterialOperator X μ)
+    (hyp : CeaHypotheses D M) (i : ι) (f : U) :
+    Nonempty (DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f) := by
+  sorry
+
+/-- **Theorem 3.1** (p. 16, [5, Theorem 3.1]), quasi-optimality in the form stated in the
+thesis: `‖σ - σₕ‖₀ + ‖u - uₕ‖₀ + ‖γ - γₕ‖₀ ≤ C (inf ‖σ - τₕ‖₀ + inf ‖u - vₕ‖₀ +
+inf ‖γ - ηₕ‖₀)` with `C` independent of the mesh and of the right-hand side `f`.
+Uniqueness of the discrete solution is `cea_unique`, existence is `cea_existence`. -/
 theorem cea_estimate (D : DiscreteFamily div X S₀ ι) (M : MaterialOperator X μ)
     (hyp : CeaHypotheses D M) :
-    ∃ C : ℝ, 0 < C ∧ ∀ (i : ι) (f : U),
-      (∃ q : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f,
-        ∀ q' : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f,
-          q'.σₕ = q.σₕ ∧ q'.uₕ = q.uₕ ∧ q'.γₕ = q.γₕ) ∧
-      ∀ (p : MixedSource div X S₀ M f)
-        (q : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f),
+    ∃ C : ℝ, 0 < C ∧ ∀ (i : ι) (f : U) (p : MixedSource div X S₀ M f)
+      (q : DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f),
         ‖p.σ - q.σₕ‖ + ‖p.u - q.uₕ‖ + ‖p.γ - q.γₕ‖
           ≤ C * (Metric.infDist p.σ (D.S i : Set H) + Metric.infDist p.u (D.Uh i : Set U)
               + Metric.infDist p.γ (D.Xh i : Set H)) := by
-  -- Not proved here. Uniqueness: for `f = 0`, `σₕ ∈ ker (Bₕ + Cₕ)`, so `σₕ = 0` by
-  -- `coercive_discrete`, and then `uₕ = γₕ = 0` by the inf-sup condition; existence
-  -- follows from uniqueness by finite dimensionality. Quasi-optimality: `σₕ - fort σ` lies
-  -- in the discrete kernel, so coercivity plus continuity bound `‖σₕ - fort σ‖` by
-  -- `‖σ - fort σ‖` and `inf ‖γ - ηₕ‖`; the inf-sup condition then bounds `‖uₕ - vₕ‖ +
-  -- ‖γₕ - ηₕ‖` by `Ma ‖σ - σₕ‖ + ‖u - vₕ‖ + ‖γ - ηₕ‖` (Brezzi [9], Boffi–Brezzi–Fortin
-  -- [5]). This is a page of estimates with `Metric.infDist` that was not carried out.
-  sorry
+  obtain ⟨C, hC, hbound⟩ := cea_quasi_optimal D M hyp
+  refine ⟨C, hC, fun i f p q => ?_⟩
+  refine le_of_forall_pos_le_add (fun ε hε => ?_)
+  obtain ⟨δ, hδ⟩ : ∃ δ, δ = ε / (2 * C) := ⟨_, rfl⟩
+  have hδ0 : 0 < δ := by rw [hδ]; positivity
+  have hCδ : C * δ = ε / 2 := by rw [hδ]; field_simp
+  have hUne : (D.Uh i : Set U).Nonempty := ⟨0, (D.Uh i).zero_mem⟩
+  have hXne : (D.Xh i : Set H).Nonempty := ⟨0, (D.Xh i).zero_mem⟩
+  obtain ⟨vₕ, hv, hvlt⟩ := (Metric.infDist_lt_iff hUne).mp (lt_add_of_pos_right _ hδ0)
+  obtain ⟨ηₕ, hη, hηlt⟩ := (Metric.infDist_lt_iff hXne).mp (lt_add_of_pos_right _ hδ0)
+  rw [dist_eq_norm] at hvlt hηlt
+  have h1 := hbound i f p q vₕ hv ηₕ hη
+  have e1 : C * ‖p.u - vₕ‖ ≤ C * (Metric.infDist p.u (D.Uh i : Set U) + δ) :=
+    mul_le_mul_of_nonneg_left hvlt.le hC.le
+  have e2 : C * ‖p.γ - ηₕ‖ ≤ C * (Metric.infDist p.γ (D.Xh i : Set H) + δ) :=
+    mul_le_mul_of_nonneg_left hηlt.le hC.le
+  linarith [h1, e1, e2, hCδ]
 
 /-- The hypotheses of Theorem 3.1 are satisfiable: the trivial model `H = U = ℝ`, `div = id`,
 `C = id`, `Sₕ = Uₕ = ℝ`, `Xₕ = ⊥` satisfies them with `Ma = α = 1`, `β = 1/2`, `Cfort = 1`. -/
 example (μ : ℝ) : CeaHypotheses trivialFamily (trivialMaterial μ) where
   Ma := 1
+  Ma_nonneg := zero_le_one
   a_bound := fun σ τ => by simpa [trivialMaterial] using abs_real_inner_le_norm σ τ
   kernel_incl := fun i τ hτ => ⟨Submodule.mem_top, fun v => hτ.2.1 v Submodule.mem_top,
     fun η hη => by simp [(Submodule.mem_bot ℝ).mp hη]⟩
@@ -108,6 +381,7 @@ example (μ : ℝ) : CeaHypotheses trivialFamily (trivialMaterial μ) where
   fort_mem := fun _ _ => Submodule.mem_top
   fortin := fun _ _ _ _ _ _ => by simp
   Cfort := 1
+  Cfort_nonneg := zero_le_one
   fort_approx := fun i τ => by
     have := Metric.infDist_nonneg (x := τ) (s := (trivialFamily.S i : Set ℝ))
     simpa using this
