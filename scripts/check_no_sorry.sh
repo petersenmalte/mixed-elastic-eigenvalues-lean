@@ -9,6 +9,7 @@ proven=(
   MixedElasticEigenvalues/EigenvalueIdentities.lean
   MixedElasticEigenvalues/Statements/Framework.lean
   MixedElasticEigenvalues/Statements/EigenvalueRate.lean
+  MixedElasticEigenvalues/Statements/PostprocessedEigenvalue.lean
 )
 
 status=0

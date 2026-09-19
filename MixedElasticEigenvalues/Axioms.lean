@@ -67,8 +67,8 @@ end MixedElasticEigenvalues.Audit
 
 #check_axioms_of MixedElasticEigenvalues.Material MixedElasticEigenvalues.EigenvalueIdentities
   MixedElasticEigenvalues.Statements.Framework MixedElasticEigenvalues.Statements.EigenvalueRate
+  MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
 
 #report_axioms_of MixedElasticEigenvalues.Statements.Cea MixedElasticEigenvalues.Statements.Boffi
   MixedElasticEigenvalues.Statements.Postprocessing
-  MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
   MixedElasticEigenvalues.Statements.APosteriori
