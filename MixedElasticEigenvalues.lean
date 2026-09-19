@@ -1,1 +1,3 @@
 import MixedElasticEigenvalues.Basic
+import MixedElasticEigenvalues.Material
+import MixedElasticEigenvalues.EigenvalueIdentities
