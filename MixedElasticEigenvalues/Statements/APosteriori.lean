@@ -54,6 +54,7 @@ structure APosterioriData {D : DiscreteFamily div X S₀ ι} {M : MaterialOperat
   sz : ι → U → U
   sz_mem : ∀ i, ∀ v ∈ V, sz i v ∈ V ⊓ D.Uh i
   Csz : ℝ
+  Csz_nonneg : 0 ≤ Csz
   sz_approx : ∀ i, ∀ v ∈ V, ‖v - sz i v‖ ≤ Csz * D.h i * ‖PP.grad v‖
   sz_stable : ∀ i, ∀ v ∈ V, ‖sz i v‖ ≤ Csz * ‖PP.grad v‖
   jump : ι → U → ℝ
@@ -91,6 +92,86 @@ noncomputable def estimatorSq (i : ι) : ℝ :=
 
 /-- The error estimator `η = √(η²)`. -/
 noncomputable def estimator (i : ι) : ℝ := Real.sqrt (A.estimatorSq i)
+
+/-- The stress of the primal mixed problem (62) is symmetric, `skw σ = 0`, by its third
+equation together with `skw σ ∈ X`. -/
+theorem skw_sol_eq_zero : A.skw E.p.σ = 0 := by
+  have h1 := E.p.eq₃ (A.skw E.p.σ) (A.skw_mem E.p.σ)
+  have h2 := A.skw_inner E.p.σ (A.skw E.p.σ) (A.skw_mem E.p.σ)
+  have h3 : ⟪A.skw E.p.σ, A.skw E.p.σ⟫_ℝ = 0 := by rw [← h2]; exact h1
+  exact inner_self_eq_zero.mp h3
+
+/-- Hence the third residual of (62) is `‖skw σₕ‖₀`, the last term of the estimator. -/
+theorem skw_sub_eq (i : ι) : A.skw (E.p.σ - (E.q i).σₕ) = -A.skw (E.q i).σₕ := by
+  rw [map_sub, A.skw_sol_eq_zero, zero_sub]
+
+/-- The central estimate of **Lemma 6.1** (p. 47): the dual norm of the second residual
+of (62) is controlled by the volume term of the estimator plus higher-order terms,
+`‖Res₂‖ ≲ h ‖κ*ₕu*ₕ + div σₕ‖₀ + h.o.t.`.
+
+The proof follows the thesis: Gauss' theorem turns `(σ - σₕ, ∇w)` into `(κu + div σₕ, w)`;
+splitting `w` by its Scott–Zhang interpolant `vₕ` (p. 47), the non-interpolated part is
+estimated by `‖w - vₕ‖ ≲ h ‖∇w‖`, while on `vₕ ∈ Uₕ` the strong form of the second
+equation of (37) and the postprocessing (52) replace `div σₕ` by `-κₕu*ₕ`. -/
+theorem residual_bound (i : ι) :
+    A.resG (E.p.σ - (E.q i).σₕ)
+      ≤ A.Csz * (D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ + PP.hot i) := by
+  refine A.resG_least _ _ (fun w hw => ?_)
+  -- Gauss' theorem and the second equation of (36)
+  have hgreen : ⟪E.p.σ - (E.q i).σₕ, PP.grad w⟫_ℝ
+      = ⟪E.p.κ • E.p.u + div (E.q i).σₕ, w⟫_ℝ := by
+    have g1 := A.green E.p.σ w hw
+    have g2 := A.green (E.q i).σₕ w hw
+    have h2 := E.p.eq₂ w
+    rw [inner_sub_left, g1, g2, h2, inner_add_left, real_inner_smul_left]
+    ring
+  -- split off the Scott–Zhang interpolant
+  obtain ⟨hszV, hszU⟩ := A.sz_mem i w hw
+  have hd : ⟪div (E.q i).σₕ, A.sz i w⟫_ℝ
+      = -((E.q i).κₕ * ⟪PP.ustar i, A.sz i w⟫_ℝ) := by
+    rw [(E.q i).eq₂, real_inner_smul_left, ← PP.proj i _ hszU]
+    ring
+  have hsplit : ⟪E.p.κ • E.p.u + div (E.q i).σₕ, w⟫_ℝ
+      = ⟪E.p.κ • E.p.u + div (E.q i).σₕ, w - A.sz i w⟫_ℝ
+        + ⟪E.p.κ • E.p.u - (E.q i).κₕ • PP.ustar i, A.sz i w⟫_ℝ := by
+    simp only [inner_sub_right, inner_add_left, inner_sub_left, real_inner_smul_left, hd]
+    ring
+  have hb1 : ⟪E.p.κ • E.p.u + div (E.q i).σₕ, w - A.sz i w⟫_ℝ
+      ≤ ‖E.p.κ • E.p.u + div (E.q i).σₕ‖ * (A.Csz * D.h i * ‖PP.grad w‖) :=
+    le_trans (real_inner_le_norm _ _)
+      (mul_le_mul_of_nonneg_left (A.sz_approx i w hw) (norm_nonneg _))
+  have hb2 : ⟪E.p.κ • E.p.u - (E.q i).κₕ • PP.ustar i, A.sz i w⟫_ℝ
+      ≤ ‖E.p.κ • E.p.u - (E.q i).κₕ • PP.ustar i‖ * (A.Csz * ‖PP.grad w‖) :=
+    le_trans (real_inner_le_norm _ _)
+      (mul_le_mul_of_nonneg_left (A.sz_stable i w hw) (norm_nonneg _))
+  -- triangle inequalities splitting off the estimator term and the higher-order terms
+  have ht1 : ‖E.p.κ • E.p.u + div (E.q i).σₕ‖
+      ≤ ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖
+        + ‖E.p.κ • E.p.u - PP.κstar i • PP.ustar i‖ := by
+    have hrw : E.p.κ • E.p.u + div (E.q i).σₕ
+        = (PP.κstar i • PP.ustar i + div (E.q i).σₕ)
+          + (E.p.κ • E.p.u - PP.κstar i • PP.ustar i) := by abel
+    rw [hrw]; exact norm_add_le _ _
+  have ht2 : ‖E.p.κ • E.p.u - (E.q i).κₕ • PP.ustar i‖
+      ≤ |E.p.κ - (E.q i).κₕ| + |(E.q i).κₕ| * ‖E.p.u - PP.ustar i‖ := by
+    have hrw : E.p.κ • E.p.u - (E.q i).κₕ • PP.ustar i
+        = (E.p.κ - (E.q i).κₕ) • E.p.u + (E.q i).κₕ • (E.p.u - PP.ustar i) := by
+      rw [sub_smul, smul_sub]; abel
+    rw [hrw]
+    refine le_trans (norm_add_le _ _) ?_
+    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, E.u_norm, mul_one]
+  have hc1 : (0:ℝ) ≤ A.Csz * D.h i * ‖PP.grad w‖ := by
+    have := (D.h_pos i).le
+    have := A.Csz_nonneg
+    positivity
+  have hc2 : (0:ℝ) ≤ A.Csz * ‖PP.grad w‖ := by
+    have := A.Csz_nonneg
+    positivity
+  have hm1 := mul_le_mul_of_nonneg_right ht1 hc1
+  have hm2 := mul_le_mul_of_nonneg_right ht2 hc2
+  rw [hgreen, hsplit]
+  simp only [Postprocessing.hot]
+  nlinarith [hb1, hb2, hm1, hm2]
 
 theorem estimatorSq_nonneg (i : ι) : 0 ≤ A.estimatorSq i := by
   unfold estimatorSq
@@ -165,6 +246,7 @@ example (μ : ℝ) (E : EigenpairFamily trivialFamily (trivialMaterial μ))
   sz := fun _ v => v
   sz_mem := fun _ _ _ => ⟨Submodule.mem_top, Submodule.mem_top⟩
   Csz := 1
+  Csz_nonneg := zero_le_one
   sz_approx := fun n v _ => by
     have := trivialFamily.h_pos n
     simp only [sub_self, norm_zero]

@@ -65,10 +65,13 @@ Three layers, in increasing distance from the thesis's proofs:
 | `postprocessed_eigenfunction_rate` | Theorem 5.1, pp. 38–40 | thesis, [18], [24] | proved from (51), (55), (57), (58), Poincaré and inverse estimates |
 | `Statements/PostprocessedEigenvalue.lean`: `PostprocessedEigenvalueRates`, `postprocessed_eigenvalue_rate` | Theorem 5.7, p. 43 | thesis | proved from Lemma 5.6, the rate hypotheses and a Rayleigh-quotient bound for `κ*ₕ`, for `h ≤ h₀` (squared form, see errata) |
 | `Statements/APosteriori.lean`: `APosterioriData`, `estimatorSq`, `estimator`, `Postprocessing.hot` | estimator `η`, (62), (67), pp. 44–48 | thesis, [11] | definitions |
-| `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | `sorry`: Lemma 6.1 (residual estimates with Scott–Zhang) plus (67) |
+| `APosterioriData.skw_sol_eq_zero`, `skw_sub_eq` | third equation of (62), p. 44 | thesis | proved |
+| `APosterioriData.residual_bound` | central estimate of Lemma 6.1, p. 47 | thesis, [11], [23] | proved (Gauss, Scott–Zhang, (37), (52)) |
+| `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | `sorry`: remaining steps of Lemma 6.1 (apply `stab`, use `residual_bound`) plus (67) and Jensen |
 | `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | `sorry`: Lemma 5.6, Gauss' theorem, Young, Theorem 6.2, (67) |
 | Proposition 2.1, Lemma 2.2, Theorem 3.2, Proposition 3.4, Lemma 3.5, Remark 3.6, Theorem 3.3 | pp. 13–22 | [4], [5], [7], [8], [10], [14] | not formalizable at this level (Sobolev spaces on domains, `H(div)`, Stokes, BDM interpolation) |
 | Theorem 4.8, Lemma 4.11, Lemma 4.14, Theorem 6.3 | pp. 29–34, 49 | thesis, [17] | not formalized (their content enters Stage 3 as rate hypotheses) |
+| Lemma 6.1 | p. 47 | thesis, [11] | partially: its central residual estimate is `residual_bound`; the assembly is part of the open Theorem 6.2 |
 | Chapter 7 | pp. 51–67 | thesis | numerical experiments, not formalizable |
 
 Every statement of layer 3 carries a docstring quoting the theorem of the thesis with its
