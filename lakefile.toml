@@ -12,3 +12,5 @@ scope = "leanprover-community"
 
 [[lean_lib]]
 name = "MixedElasticEigenvalues"
+# Build the root module and every file under MixedElasticEigenvalues/, whether imported or not.
+globs = ["MixedElasticEigenvalues", "MixedElasticEigenvalues.+"]
