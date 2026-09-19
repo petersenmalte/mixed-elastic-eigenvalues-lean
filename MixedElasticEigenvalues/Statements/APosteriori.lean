@@ -182,6 +182,91 @@ theorem estimatorSq_nonneg (i : ι) : 0 ≤ A.estimatorSq i := by
   linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖,
     sq_nonneg ‖A.skw (E.q i).σₕ‖]
 
+/-- `η² = (√η²)²`. -/
+theorem sq_estimator (i : ι) : A.estimator i ^ 2 = A.estimatorSq i :=
+  Real.sq_sqrt (A.estimatorSq_nonneg i)
+
+theorem estimator_nonneg (i : ι) : 0 ≤ A.estimator i := Real.sqrt_nonneg _
+
+private theorem estimatorSq_eq (i : ι) : A.estimatorSq i
+    = ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ^ 2
+      + D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2
+      + A.jump i (PP.ustar i) + ‖A.skw (E.q i).σₕ‖ ^ 2 := rfl
+
+/-- The first component of the estimator, `‖C⁻¹σₕ + γₕ - ∇_𝒯u*ₕ‖₀ ≤ η`. -/
+theorem res_le_estimator (i : ι) :
+    ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ≤ A.estimator i := by
+  have h1 : ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ^ 2 ≤ A.estimatorSq i := by
+    rw [A.estimatorSq_eq i]
+    have h2 : (0:ℝ) ≤ D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2 := by positivity
+    linarith [A.jump_nonneg i (PP.ustar i), sq_nonneg ‖A.skw (E.q i).σₕ‖]
+  have h2 := Real.sqrt_le_sqrt h1
+  rwa [Real.sqrt_sq (norm_nonneg _)] at h2
+
+/-- The volume component of the estimator, `h ‖κ*ₕu*ₕ + div σₕ‖₀ ≤ η`. -/
+theorem vol_le_estimator (i : ι) :
+    D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ≤ A.estimator i := by
+  have hh := (D.h_pos i).le
+  have h1 : (D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖) ^ 2 ≤ A.estimatorSq i := by
+    rw [A.estimatorSq_eq i, mul_pow]
+    linarith [A.jump_nonneg i (PP.ustar i), sq_nonneg ‖A.skw (E.q i).σₕ‖,
+      sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖]
+  have h2 := Real.sqrt_le_sqrt h1
+  rwa [Real.sqrt_sq (by positivity)] at h2
+
+/-- The skew component of the estimator, `‖skw σₕ‖₀ ≤ η`. -/
+theorem skw_le_estimator (i : ι) : ‖A.skw (E.q i).σₕ‖ ≤ A.estimator i := by
+  have h1 : ‖A.skw (E.q i).σₕ‖ ^ 2 ≤ A.estimatorSq i := by
+    rw [A.estimatorSq_eq i]
+    have h2 : (0:ℝ) ≤ D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2 := by positivity
+    linarith [A.jump_nonneg i (PP.ustar i),
+      sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖]
+  have h2 := Real.sqrt_le_sqrt h1
+  rwa [Real.sqrt_sq (norm_nonneg _)] at h2
+
+/-- The jump component of the estimator. -/
+theorem jump_le_estimatorSq (i : ι) : A.jump i (PP.ustar i) ≤ A.estimatorSq i := by
+  rw [A.estimatorSq_eq i]
+  have h2 : (0:ℝ) ≤ D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2 := by positivity
+  linarith [sq_nonneg ‖A.skw (E.q i).σₕ‖,
+    sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖]
+
+/-- Estimate (67) for the gradient of the conforming average `ũₕ` (p. 50). -/
+theorem grad_avg_le (i : ι) : ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖
+    ≤ Real.sqrt A.Cavg * A.estimator i := by
+  have havg := A.avg_est i (PP.ustar i) (PP.ustar_mem i)
+  have h1 : ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖ ^ 2
+      ≤ A.Cavg * A.estimatorSq i := by
+    have h2 : (0:ℝ) ≤ (D.h i)⁻¹ ^ 2 * ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2 := by positivity
+    linarith [mul_le_mul_of_nonneg_left (A.jump_le_estimatorSq i) A.Cavg_nonneg]
+  have h2 := Real.sqrt_le_sqrt h1
+  rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_mul A.Cavg_nonneg, ← A.sq_estimator i,
+    Real.sqrt_sq (A.estimator_nonneg i)] at h2
+
+/-- Estimate (67) for the conforming average `ũₕ` itself (p. 50). -/
+theorem avg_le (i : ι) : ‖PP.ustar i - A.avg i (PP.ustar i)‖
+    ≤ D.h i * (Real.sqrt A.Cavg * A.estimator i) := by
+  have hh := D.h_pos i
+  have hη := A.estimator_nonneg i
+  have havg := A.avg_est i (PP.ustar i) (PP.ustar_mem i)
+  have h1 : (D.h i)⁻¹ ^ 2 * ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2
+      ≤ A.Cavg * A.estimatorSq i := by
+    linarith [sq_nonneg ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖,
+      mul_le_mul_of_nonneg_left (A.jump_le_estimatorSq i) A.Cavg_nonneg]
+  have h2 : ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2
+      ≤ (D.h i * (Real.sqrt A.Cavg * A.estimator i)) ^ 2 := by
+    have hexp : (D.h i * (Real.sqrt A.Cavg * A.estimator i)) ^ 2
+        = D.h i ^ 2 * (A.Cavg * A.estimatorSq i) := by
+      rw [mul_pow, mul_pow, Real.sq_sqrt A.Cavg_nonneg, A.sq_estimator i]
+    rw [hexp]
+    calc ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2
+        = D.h i ^ 2 * ((D.h i)⁻¹ ^ 2 * ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2) := by
+          field_simp
+      _ ≤ D.h i ^ 2 * (A.Cavg * A.estimatorSq i) :=
+          mul_le_mul_of_nonneg_left h1 (sq_nonneg (D.h i))
+  have h3 := Real.sqrt_le_sqrt h2
+  rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq (by positivity)] at h3
+
 /-- **Theorem 6.2** (p. 48): reliability. Let `κ ∈ ℝ` and `u ∈ H¹₀` solve (62) for some
 `(σ, γ)`. The postprocessed eigenfunction `u*ₕ` satisfies
 `‖C⁻¹(σ - σₕ)‖₀ + ‖∇u - ∇_𝒯u*ₕ‖₀ + ‖γ - γₕ‖₀ ≲ η + h.o.t.` -/
@@ -205,47 +290,10 @@ theorem reliability : ∃ C : ℝ, 0 < C ∧ ∀ i,
   have hhot0 : 0 ≤ PP.hot i := by
     simp only [Postprocessing.hot]
     positivity
-  have hest : A.estimator i = Real.sqrt (A.estimatorSq i) := rfl
-  have hsqSq : A.estimatorSq i
-      = ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ^ 2
-        + D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2
-        + A.jump i (PP.ustar i) + ‖A.skw (E.q i).σₕ‖ ^ 2 := rfl
-  have hpos2 : (0:ℝ) ≤ D.h i ^ 2 * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ^ 2 := by
-    positivity
-  -- every component of `η²` is bounded by `η`
-  have hc1 : ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ≤ A.estimator i := by
-    have h1 : ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖ ^ 2
-        ≤ A.estimatorSq i := by
-      rw [hsqSq]; linarith [sq_nonneg ‖A.skw (E.q i).σₕ‖]
-    have h2 := Real.sqrt_le_sqrt h1
-    rwa [Real.sqrt_sq (norm_nonneg _), ← hest] at h2
-  have hc2 : D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖ ≤ A.estimator i := by
-    have h1 : (D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖) ^ 2 ≤ A.estimatorSq i := by
-      rw [hsqSq, mul_pow]
-      linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖,
-        sq_nonneg ‖A.skw (E.q i).σₕ‖]
-    have h2 := Real.sqrt_le_sqrt h1
-    rwa [Real.sqrt_sq (by positivity), ← hest] at h2
-  have hc3 : ‖A.skw (E.q i).σₕ‖ ≤ A.estimator i := by
-    have h1 : ‖A.skw (E.q i).σₕ‖ ^ 2 ≤ A.estimatorSq i := by
-      rw [hsqSq]
-      linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖]
-    have h2 := Real.sqrt_le_sqrt h1
-    rwa [Real.sqrt_sq (norm_nonneg _), ← hest] at h2
-  -- the conforming average, estimate (67)
-  have hJ : ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖
-      ≤ Real.sqrt A.Cavg * A.estimator i := by
-    have havg := A.avg_est i (PP.ustar i) (PP.ustar_mem i)
-    have hj : A.jump i (PP.ustar i) ≤ A.estimatorSq i := by
-      rw [hsqSq]
-      linarith [sq_nonneg ‖M.Cinv (E.q i).σₕ + (E.q i).γₕ - PP.grad (PP.ustar i)‖,
-        sq_nonneg ‖A.skw (E.q i).σₕ‖]
-    have h1 : ‖PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))‖ ^ 2
-        ≤ A.Cavg * A.estimatorSq i := by
-      have h2 : (0:ℝ) ≤ (D.h i)⁻¹ ^ 2 * ‖PP.ustar i - A.avg i (PP.ustar i)‖ ^ 2 := by positivity
-      linarith [mul_le_mul_of_nonneg_left hj hCavg]
-    have h2 := Real.sqrt_le_sqrt h1
-    rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_mul hCavg, ← hest] at h2
+  have hc1 := A.res_le_estimator i
+  have hc2 := A.vol_le_estimator i
+  have hc3 := A.skw_le_estimator i
+  have hJ := A.grad_avg_le i
   -- stability of the primal mixed problem, applied to the error
   have hvmem : E.p.u - A.avg i (PP.ustar i) ∈ A.V :=
     A.V.sub_mem A.u_mem (A.avg_mem i (PP.ustar i))

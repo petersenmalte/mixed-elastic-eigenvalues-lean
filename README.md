@@ -68,11 +68,12 @@ Three layers, in increasing distance from the thesis's proofs:
 | `Statements/APosteriori.lean`: `APosterioriData`, `estimatorSq`, `estimator`, `Postprocessing.hot` | estimator `η`, (62), (67), pp. 44–48 | thesis, [11] | definitions |
 | `APosterioriData.skw_sol_eq_zero`, `skw_sub_eq` | third equation of (62), p. 44 | thesis | proved |
 | `APosterioriData.residual_bound` | central estimate of Lemma 6.1, p. 47 | thesis, [11], [23] | proved (Gauss, Scott–Zhang, (37), (52)) |
+| `sq_estimator`, `res_le_estimator`, `vol_le_estimator`, `skw_le_estimator`, `jump_le_estimatorSq`, `grad_avg_le`, `avg_le` | components of `η²`, and (67), pp. 48, 50 | thesis, [20] | proved |
 | `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | proved from `stab`, `residual_bound`, `skw_sub_eq` and (67) |
 | `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | `sorry`: Lemma 5.6, Gauss' theorem, Young, Theorem 6.2, (67) |
 | Proposition 2.1, Lemma 2.2, Theorem 3.2, Proposition 3.4, Lemma 3.5, Remark 3.6, Theorem 3.3 | pp. 13–22 | [4], [5], [7], [8], [10], [14] | not formalizable at this level (Sobolev spaces on domains, `H(div)`, Stokes, BDM interpolation) |
 | Theorem 4.8, Lemma 4.11, Lemma 4.14, Theorem 6.3 | pp. 29–34, 49 | thesis, [17] | not formalized (their content enters Stage 3 as rate hypotheses) |
-| Lemma 6.1 | p. 47 | thesis, [11] | partially: its central residual estimate is `residual_bound`; the assembly is part of the open Theorem 6.2 |
+| Lemma 6.1 | p. 47 | thesis, [11] | its central residual estimate is `residual_bound`; its assembly is contained in the proof of Theorem 6.2 |
 | Chapter 7 | pp. 51–67 | thesis | numerical experiments, not formalizable |
 
 Every statement of layer 3 carries a docstring quoting the theorem of the thesis with its
