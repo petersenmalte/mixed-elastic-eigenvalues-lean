@@ -16,7 +16,7 @@ jobs:
           curl -sSfL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      # Until lake-manifest.json is committed: resolve Mathlib and adopt its toolchain.
+      # Fallback only: lake-manifest.json is committed, so this step normally does nothing.
       - name: Resolve dependencies (only if lake-manifest.json is missing)
         run: |
           if [ ! -f lake-manifest.json ]; then
@@ -27,5 +27,11 @@ jobs:
       - name: Fetch prebuilt Mathlib
         run: lake exe cache get
 
-      - name: Build
+      - name: Build (all modules, includes the axiom audit in Axioms.lean)
         run: lake build
+
+      - name: No sorry in proven layers, no axiom / native_decide anywhere
+        run: scripts/check_no_sorry.sh
+
+      - name: Axiom audit report
+        run: scripts/check_axioms.sh
