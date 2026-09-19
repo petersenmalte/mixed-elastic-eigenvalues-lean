@@ -12,6 +12,7 @@ proven=(
   MixedElasticEigenvalues/Statements/PostprocessedEigenvalue.lean
   MixedElasticEigenvalues/Statements/Postprocessing.lean
   MixedElasticEigenvalues/Statements/Boffi.lean
+  MixedElasticEigenvalues/Statements/APosteriori.lean
 )
 
 status=0

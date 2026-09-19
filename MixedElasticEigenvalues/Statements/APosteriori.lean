@@ -3,8 +3,8 @@ import MixedElasticEigenvalues.Statements.Postprocessing
 /-!
 # Theorems 6.2 and 6.4: a posteriori error estimation
 
-Statements of Theorem 6.2 (reliability of the estimator `η`, p. 48) and Theorem 6.4
-(`|κ - κ*ₕ| ≲ η² + h.o.t.`, p. 50) in the abstract framework.
+Theorem 6.2 (reliability of the estimator `η`, p. 48) and Theorem 6.4
+(`|κ - κ*ₕ| ≲ η² + h.o.t.`, p. 50) in the abstract framework, both proved.
 
 `APosterioriData` collects the ingredients of Chapter 6:
 
@@ -67,6 +67,11 @@ structure APosterioriData {D : DiscreteFamily div X S₀ ι} {M : MaterialOperat
   avg_est : ∀ i, ∀ v ∈ PP.Ustar i,
     (D.h i)⁻¹ ^ 2 * ‖v - avg i v‖ ^ 2 + ‖PP.grad v - PP.grad (avg i v)‖ ^ 2 ≤ Cavg * jump i v
   ustar_ne : ∀ i, PP.ustar i ≠ 0
+  /-- A uniform bound on the postprocessed eigenvalues. Not spelled out in the thesis,
+  where `κ*ₕ → κ` makes it automatic; in this abstract setting it is a hypothesis. -/
+  Kstar : ℝ
+  Kstar_nonneg : 0 ≤ Kstar
+  kstar_bound : ∀ i, |postprocessedEigenvalue div (E.q i).σₕ (PP.ustar i)| ≤ Kstar
 
 /-- The postprocessed eigenvalue `κ*ₕ` on mesh `i` (Definition 5.5). -/
 noncomputable def Postprocessing.κstar {D : DiscreteFamily div X S₀ ι} {M : MaterialOperator X μ}
@@ -345,11 +350,185 @@ the higher-order terms are `(h.o.t.)²` of Theorem 6.2, `‖u - u*ₕ‖₀²` a
 theorem eigenvalue_reliability : ∃ h₀ C : ℝ, 0 < h₀ ∧ 0 < C ∧ ∀ i, D.h i ≤ h₀ →
     |E.p.κ - PP.κstar i| ≤ C * (A.estimatorSq i + PP.hot i ^ 2 + ‖E.p.u - PP.ustar i‖ ^ 2
       + (E.p.κ - PP.κstar i) ^ 2) := by
-  -- Not proved here. Proof of the thesis: Lemma 5.6 (`postprocessed_eigenvalue_identity`)
-  -- with `u - u*ₕ = (u - ũₕ) + (ũₕ - u*ₕ)`, Gauss' theorem for the term
-  -- `(div(σ - σₕ), u - ũₕ)`, Young's inequality, Theorem 6.2 and (67); the restriction
-  -- `h ≤ h₀` (with `h₀ ≤ 1`) absorbs `h² Σ_E h_E⁻¹‖[u*ₕ]‖²` into `η²`.
-  sorry
+  -- Lemma 5.6 (`postprocessed_eigenvalue_identity`) with `u - u*ₕ = (u - ũₕ) + (ũₕ - u*ₕ)`,
+  -- Gauss' theorem for `(div(σ - σₕ), u - ũₕ)`, Theorem 6.2 for the remaining norms,
+  -- (67) for the conforming average and Young's inequality for the last term.
+  obtain ⟨C₆, hC₆, hrel⟩ := A.reliability
+  have hCn := norm_nonneg M.C
+  have hsqC : (0:ℝ) ≤ Real.sqrt A.Cavg := Real.sqrt_nonneg _
+  have hK := A.Kstar_nonneg
+  obtain ⟨K₁, hK₁def⟩ : ∃ K, K = 4 * ‖M.C‖ * C₆ ^ 2 + 2 * |μ| * C₆ ^ 2
+      + 2 * ‖M.C‖ * C₆ * (C₆ + Real.sqrt A.Cavg) + 2 * Real.sqrt A.Cavg := ⟨_, rfl⟩
+  have hK₁ : (0:ℝ) ≤ K₁ := by rw [hK₁def]; positivity
+  refine ⟨1, 2 * K₁ + A.Kstar + 2, one_pos, by positivity, fun i _ => ?_⟩
+  have hh := (D.h_pos i).le
+  have hη := A.estimator_nonneg i
+  have hhot : 0 ≤ PP.hot i := by
+    simp only [Postprocessing.hot]
+    positivity
+  set R := A.estimator i + PP.hot i with hRdef
+  have hR0 : 0 ≤ R := by rw [hRdef]; linarith
+  -- Lemma 5.6
+  have hκdef : PP.κstar i = postprocessedEigenvalue div (E.q i).σₕ (PP.ustar i) := rfl
+  have hid := postprocessed_eigenvalue_identity E.p (E.q i) (D.S_le i) (D.Xh_le i) E.u_norm
+    (A.ustar_ne i) (PP.proj i) (D.div_mem i _ (E.q i).σₕ_mem)
+  rw [← hκdef] at hid
+  -- Theorem 6.2
+  have hrel' := hrel i
+  have hn1 := norm_nonneg (M.Cinv (E.p.σ - (E.q i).σₕ))
+  have hn2 := norm_nonneg (PP.grad E.p.u - PP.grad (PP.ustar i))
+  have hn3 := norm_nonneg (E.p.γ - (E.q i).γₕ)
+  have hb1 : ‖M.Cinv (E.p.σ - (E.q i).σₕ)‖ ≤ C₆ * R := by linarith
+  have hb2 : ‖PP.grad E.p.u - PP.grad (PP.ustar i)‖ ≤ C₆ * R := by linarith
+  have hb3 : ‖E.p.γ - (E.q i).γₕ‖ ≤ C₆ * R := by linarith
+  have hCR0 : (0:ℝ) ≤ C₆ * R := by positivity
+  have hCe : ‖E.p.σ - (E.q i).σₕ‖ ≤ ‖M.C‖ * (C₆ * R) := by
+    calc ‖E.p.σ - (E.q i).σₕ‖ = ‖M.C (M.Cinv (E.p.σ - (E.q i).σₕ))‖ := by
+          rw [M.C_Cinv]
+      _ ≤ ‖M.C‖ * ‖M.Cinv (E.p.σ - (E.q i).σₕ)‖ := M.C.le_opNorm _
+      _ ≤ ‖M.C‖ * (C₆ * R) := mul_le_mul_of_nonneg_left hb1 hCn
+  -- (1) the energy term
+  have hE0 : 0 ≤ energy M.C (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ)) := M.nonneg _
+  have hE1 : energy M.C (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ))
+      ≤ ‖M.C‖ * (2 * (C₆ * R)) ^ 2 := by
+    have hx : ‖M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ)‖ ≤ 2 * (C₆ * R) :=
+      le_trans (norm_add_le _ _) (by linarith)
+    calc energy M.C (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ))
+        ≤ ‖M.C‖ * ‖M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ)‖ ^ 2 := by
+          unfold energy
+          have hcs := real_inner_le_norm (M.C (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ)))
+            (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ))
+          have hop := M.C.le_opNorm (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ))
+          have h2 := mul_le_mul_of_nonneg_right hop
+            (norm_nonneg (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ)))
+          linarith [hcs, h2]
+      _ ≤ ‖M.C‖ * (2 * (C₆ * R)) ^ 2 :=
+          mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hx 2) hCn
+  -- (2) the skew term
+  have hE2 : |2 * μ * ‖E.p.γ - (E.q i).γₕ‖ ^ 2| ≤ 2 * |μ| * (C₆ * R) ^ 2 := by
+    rw [abs_mul, abs_mul, abs_two, abs_of_nonneg (sq_nonneg ‖E.p.γ - (E.q i).γₕ‖)]
+    exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hb3 2) (by positivity)
+  -- (3) the postprocessed eigenvalue term
+  have hE3 : |PP.κstar i * ‖E.p.u - PP.ustar i‖ ^ 2|
+      ≤ A.Kstar * ‖E.p.u - PP.ustar i‖ ^ 2 := by
+    rw [abs_mul, abs_of_nonneg (sq_nonneg ‖E.p.u - PP.ustar i‖)]
+    refine mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+    have hkb := A.kstar_bound i
+    rwa [← hκdef] at hkb
+  -- (4) the divergence term, split at the conforming average
+  have hdivσ : div E.p.σ = -E.p.κ • E.p.u := by
+    have h0 : ⟪div E.p.σ + E.p.κ • E.p.u, div E.p.σ + E.p.κ • E.p.u⟫_ℝ = 0 := by
+      rw [inner_add_left, real_inner_smul_left, E.p.eq₂]
+      ring
+    rw [inner_self_eq_zero] at h0
+    rw [neg_smul]
+    exact eq_neg_of_add_eq_zero_left h0
+  have hdiven : ‖div (E.p.σ - (E.q i).σₕ)‖ = ‖E.p.κ • E.p.u + div (E.q i).σₕ‖ := by
+    rw [show div (E.p.σ - (E.q i).σₕ) = -(E.p.κ • E.p.u + div (E.q i).σₕ) from by
+      rw [map_sub, hdivσ, neg_smul]; abel, norm_neg]
+  have hvV : E.p.u - A.avg i (PP.ustar i) ∈ A.V :=
+    A.V.sub_mem A.u_mem (A.avg_mem i (PP.ustar i))
+  have hbA : |⟪div (E.p.σ - (E.q i).σₕ), E.p.u - A.avg i (PP.ustar i)⟫_ℝ|
+      ≤ (‖M.C‖ * (C₆ * R)) * (C₆ * R + Real.sqrt A.Cavg * A.estimator i) := by
+    have hgauss : ⟪div (E.p.σ - (E.q i).σₕ), E.p.u - A.avg i (PP.ustar i)⟫_ℝ
+        = -⟪E.p.σ - (E.q i).σₕ, PP.grad (E.p.u - A.avg i (PP.ustar i))⟫_ℝ := by
+      rw [A.green (E.p.σ - (E.q i).σₕ) _ hvV]; ring
+    rw [hgauss, abs_neg]
+    refine le_trans (abs_real_inner_le_norm _ _) ?_
+    have hg : ‖PP.grad (E.p.u - A.avg i (PP.ustar i))‖
+        ≤ C₆ * R + Real.sqrt A.Cavg * A.estimator i := by
+      rw [map_sub, show PP.grad E.p.u - PP.grad (A.avg i (PP.ustar i))
+        = (PP.grad E.p.u - PP.grad (PP.ustar i))
+          + (PP.grad (PP.ustar i) - PP.grad (A.avg i (PP.ustar i))) from by abel]
+      exact le_trans (norm_add_le _ _) (by linarith [A.grad_avg_le i])
+    exact mul_le_mul hCe hg (norm_nonneg _) (by positivity)
+  have hbB : |⟪div (E.p.σ - (E.q i).σₕ), A.avg i (PP.ustar i) - PP.ustar i⟫_ℝ|
+      ≤ Real.sqrt A.Cavg * A.estimator i * R := by
+    refine le_trans (abs_real_inner_le_norm _ _) ?_
+    have hn : ‖A.avg i (PP.ustar i) - PP.ustar i‖
+        ≤ D.h i * (Real.sqrt A.Cavg * A.estimator i) := by
+      rw [norm_sub_rev]; exact A.avg_le i
+    have hd : ‖div (E.p.σ - (E.q i).σₕ)‖ ≤ ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖
+        + ‖E.p.κ • E.p.u - PP.κstar i • PP.ustar i‖ := by
+      rw [hdiven, show E.p.κ • E.p.u + div (E.q i).σₕ
+        = (PP.κstar i • PP.ustar i + div (E.q i).σₕ)
+          + (E.p.κ • E.p.u - PP.κstar i • PP.ustar i) from by abel]
+      exact norm_add_le _ _
+    have hvol := A.vol_le_estimator i
+    have hhot2 : D.h i * ‖E.p.κ • E.p.u - PP.κstar i • PP.ustar i‖ ≤ PP.hot i := by
+      simp only [Postprocessing.hot]
+      have hA : (0:ℝ) ≤ |(E.q i).κₕ| * ‖E.p.u - PP.ustar i‖ := by positivity
+      linarith [abs_nonneg (E.p.κ - (E.q i).κₕ)]
+    calc ‖div (E.p.σ - (E.q i).σₕ)‖ * ‖A.avg i (PP.ustar i) - PP.ustar i‖
+        ≤ (‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖
+            + ‖E.p.κ • E.p.u - PP.κstar i • PP.ustar i‖)
+          * (D.h i * (Real.sqrt A.Cavg * A.estimator i)) :=
+          mul_le_mul hd hn (norm_nonneg _) (by positivity)
+      _ = Real.sqrt A.Cavg * A.estimator i
+            * (D.h i * ‖PP.κstar i • PP.ustar i + div (E.q i).σₕ‖
+              + D.h i * ‖E.p.κ • E.p.u - PP.κstar i • PP.ustar i‖) := by ring
+      _ ≤ Real.sqrt A.Cavg * A.estimator i * R := by
+          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+          rw [hRdef]; linarith
+  have hE4 : |2 * ⟪div (E.p.σ - (E.q i).σₕ), E.p.u - PP.ustar i⟫_ℝ|
+      ≤ 2 * ((‖M.C‖ * (C₆ * R)) * (C₆ * R + Real.sqrt A.Cavg * A.estimator i)
+        + Real.sqrt A.Cavg * A.estimator i * R) := by
+    rw [show ⟪div (E.p.σ - (E.q i).σₕ), E.p.u - PP.ustar i⟫_ℝ
+      = ⟪div (E.p.σ - (E.q i).σₕ), E.p.u - A.avg i (PP.ustar i)⟫_ℝ
+        + ⟪div (E.p.σ - (E.q i).σₕ), A.avg i (PP.ustar i) - PP.ustar i⟫_ℝ from by
+      rw [← inner_add_right]; congr 1; abel, abs_mul, abs_two]
+    have := abs_add_le ⟪div (E.p.σ - (E.q i).σₕ), E.p.u - A.avg i (PP.ustar i)⟫_ℝ
+      ⟪div (E.p.σ - (E.q i).σₕ), A.avg i (PP.ustar i) - PP.ustar i⟫_ℝ
+    linarith [hbA, hbB]
+  -- (5) Young's inequality for the last term
+  have hE5 : |2 * ⟪(PP.κstar i - E.p.κ) • E.p.u, E.p.u - PP.ustar i⟫_ℝ|
+      ≤ (E.p.κ - PP.κstar i) ^ 2 + ‖E.p.u - PP.ustar i‖ ^ 2 := by
+    rw [real_inner_smul_left, abs_mul, abs_mul, abs_two, abs_sub_comm (PP.κstar i) E.p.κ]
+    have hcs := abs_real_inner_le_norm E.p.u (E.p.u - PP.ustar i)
+    rw [E.u_norm, one_mul] at hcs
+    nlinarith [hcs, abs_nonneg (E.p.κ - PP.κstar i), norm_nonneg (E.p.u - PP.ustar i),
+      sq_nonneg (|E.p.κ - PP.κstar i| - ‖E.p.u - PP.ustar i‖), sq_abs (E.p.κ - PP.κstar i)]
+  -- assembly
+  have hab : ∀ x y : ℝ, |x + y| ≤ |x| + |y| := fun x y => by
+    simpa [sub_neg_eq_add] using abs_sub x (-y)
+  have tri : ∀ a b c d e : ℝ, |a - b + c + d - e| ≤ |a| + |b| + |c| + |d| + |e| := by
+    intro a b c d e
+    calc |a - b + c + d - e| ≤ |a - b + c + d| + |e| := abs_sub _ _
+      _ ≤ |a - b + c| + |d| + |e| := by linarith [hab (a - b + c) d]
+      _ ≤ |a - b| + |c| + |d| + |e| := by linarith [hab (a - b) c]
+      _ ≤ |a| + |b| + |c| + |d| + |e| := by linarith [abs_sub a b]
+  have hI := (congrArg abs hid).trans_le
+    (tri (energy M.C (M.Cinv (E.p.σ - (E.q i).σₕ) + (E.p.γ - (E.q i).γₕ)))
+      (2 * μ * ‖E.p.γ - (E.q i).γₕ‖ ^ 2) (PP.κstar i * ‖E.p.u - PP.ustar i‖ ^ 2)
+      (2 * ⟪div (E.p.σ - (E.q i).σₕ), E.p.u - PP.ustar i⟫_ℝ)
+      (2 * ⟪(PP.κstar i - E.p.κ) • E.p.u, E.p.u - PP.ustar i⟫_ℝ))
+  rw [abs_of_nonneg hE0] at hI
+  have hηR : A.estimator i ≤ R := by rw [hRdef]; linarith
+  have hmain : |E.p.κ - PP.κstar i|
+      ≤ K₁ * R ^ 2 + (A.Kstar + 1) * ‖E.p.u - PP.ustar i‖ ^ 2
+        + (E.p.κ - PP.κstar i) ^ 2 := by
+    have hp1 : Real.sqrt A.Cavg * A.estimator i ≤ Real.sqrt A.Cavg * R :=
+      mul_le_mul_of_nonneg_left hηR hsqC
+    have hp2 : Real.sqrt A.Cavg * A.estimator i * R ≤ Real.sqrt A.Cavg * R * R :=
+      mul_le_mul_of_nonneg_right hp1 hR0
+    have hp3 : (‖M.C‖ * (C₆ * R)) * (C₆ * R + Real.sqrt A.Cavg * A.estimator i)
+        ≤ (‖M.C‖ * (C₆ * R)) * (C₆ * R + Real.sqrt A.Cavg * R) :=
+      mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    rw [hK₁def]
+    linarith [hI, hE1, hE2, hE3, hE4, hE5, hp2, hp3]
+  have hRsq : R ^ 2 ≤ 2 * (A.estimatorSq i + PP.hot i ^ 2) := by
+    have hsq := A.sq_estimator i
+    have hexp : R ^ 2 = A.estimator i ^ 2 + 2 * (A.estimator i * PP.hot i) + PP.hot i ^ 2 := by
+      rw [hRdef]; ring
+    rw [hexp, hsq]
+    linarith [sq_nonneg (A.estimator i - PP.hot i), hsq]
+  have e1 : (0:ℝ) ≤ A.estimatorSq i := A.estimatorSq_nonneg i
+  have e2 : (0:ℝ) ≤ PP.hot i ^ 2 := sq_nonneg _
+  have e3 : (0:ℝ) ≤ ‖E.p.u - PP.ustar i‖ ^ 2 := sq_nonneg _
+  have e4 : (0:ℝ) ≤ (E.p.κ - PP.κstar i) ^ 2 := sq_nonneg _
+  have hstep := mul_le_mul_of_nonneg_left hRsq hK₁
+  linarith [hmain, hstep, mul_nonneg hK e1, mul_nonneg hK e2, mul_nonneg hK₁ e3,
+    mul_nonneg hK₁ e4, mul_nonneg hK e4, e1, e2, e3, e4]
 
 end APosterioriData
 
@@ -407,6 +586,11 @@ example (μ : ℝ) (E : EigenpairFamily trivialFamily (trivialMaterial μ))
   Cavg_nonneg := le_rfl
   avg_est := fun n v _ => by simp
   ustar_ne := fun _ => by simp [trivialPostprocessing]
+  Kstar := 1
+  Kstar_nonneg := zero_le_one
+  kstar_bound := fun n => by
+    have h1 : (E.q n).σₕ = -1 := by rw [hq]; rfl
+    simp [postprocessedEigenvalue, trivialPostprocessing, h1]
 
 end
 

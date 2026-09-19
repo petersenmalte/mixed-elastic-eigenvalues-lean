@@ -70,6 +70,6 @@ end MixedElasticEigenvalues.Audit
   MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
   MixedElasticEigenvalues.Statements.Postprocessing
   MixedElasticEigenvalues.Statements.Boffi
+  MixedElasticEigenvalues.Statements.APosteriori
 
 #report_axioms_of MixedElasticEigenvalues.Statements.Cea
-  MixedElasticEigenvalues.Statements.APosteriori

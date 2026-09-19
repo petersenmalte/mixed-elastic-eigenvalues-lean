@@ -30,9 +30,9 @@ Three layers, in increasing distance from the thesis's proofs:
    Lean statements over abstract families of discrete spaces, with every finite
    element property (stability, approximation, postprocessing, interpolation) as a
    typed hypothesis (`structure`), each with a trivial model showing the hypotheses are
-   satisfiable. Theorems 4.7, 4.10, 5.1, 5.7, 6.2 and the uniqueness and error estimate
-   of Theorem 3.1 are proved; still open (`sorry`, each with a comment on what the proof
-   in the thesis needs) are the existence part of Theorem 3.1 and Theorem 6.4.
+   satisfiable. Theorems 4.7, 4.10, 5.1, 5.7, 6.2, 6.4 and the uniqueness and error
+   estimate of Theorem 3.1 are proved; the only remaining `sorry` is the existence part
+   of Theorem 3.1, which needs finite-dimensional linear algebra (see `cea_existence`).
 
 | Lean file / declaration | Thesis | Source | Status |
 |---|---|---|---|
@@ -70,7 +70,7 @@ Three layers, in increasing distance from the thesis's proofs:
 | `APosterioriData.residual_bound` | central estimate of Lemma 6.1, p. 47 | thesis, [11], [23] | proved (Gauss, Scott–Zhang, (37), (52)) |
 | `sq_estimator`, `res_le_estimator`, `vol_le_estimator`, `skw_le_estimator`, `jump_le_estimatorSq`, `grad_avg_le`, `avg_le` | components of `η²`, and (67), pp. 48, 50 | thesis, [20] | proved |
 | `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | proved from `stab`, `residual_bound`, `skw_sub_eq` and (67) |
-| `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | `sorry`: Lemma 5.6, Gauss' theorem, Young, Theorem 6.2, (67) |
+| `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | proved from Lemma 5.6, Gauss' theorem, Theorem 6.2, (67) and Young; needs a uniform bound on `κ*ₕ` as extra hypothesis |
 | Proposition 2.1, Lemma 2.2, Theorem 3.2, Proposition 3.4, Lemma 3.5, Remark 3.6, Theorem 3.3 | pp. 13–22 | [4], [5], [7], [8], [10], [14] | not formalizable at this level (Sobolev spaces on domains, `H(div)`, Stokes, BDM interpolation) |
 | Theorem 4.8, Lemma 4.11, Lemma 4.14, Theorem 6.3 | pp. 29–34, 49 | thesis, [17] | not formalized (their content enters Stage 3 as rate hypotheses) |
 | Lemma 6.1 | p. 47 | thesis, [11] | its central residual estimate is `residual_bound`; its assembly is contained in the proof of Theorem 6.2 |
@@ -91,8 +91,8 @@ The [CI workflow](https://github.com/petersenmalte/mixed-elastic-eigenvalues-lea
 2. `scripts/check_no_sorry.sh`: fails if `sorry` occurs in any of the proved modules
    (`Material.lean`, `EigenvalueIdentities.lean`, `Statements/Framework.lean`,
    `Statements/EigenvalueRate.lean`, `Statements/Postprocessing.lean`,
-   `Statements/PostprocessedEigenvalue.lean`, `Statements/Boffi.lean`), or if
-   `axiom` / `native_decide` occur anywhere;
+   `Statements/PostprocessedEigenvalue.lean`, `Statements/Boffi.lean`,
+   `Statements/APosteriori.lean`), or if `axiom` / `native_decide` occur anywhere;
 3. the axiom audit `MixedElasticEigenvalues/Axioms.lean` (run during `lake build` and again by
    `scripts/check_axioms.sh`): `#print axioms` for every declaration of the proved
    modules; the build fails if any axiom other than `propext`, `Classical.choice` and
