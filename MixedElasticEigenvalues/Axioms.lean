@@ -66,10 +66,9 @@ elab "#report_axioms_of " mods:ident+ : command => do
 end MixedElasticEigenvalues.Audit
 
 #check_axioms_of MixedElasticEigenvalues.Material MixedElasticEigenvalues.EigenvalueIdentities
+  MixedElasticEigenvalues.Statements.Framework MixedElasticEigenvalues.Statements.EigenvalueRate
 
-#report_axioms_of MixedElasticEigenvalues.Statements.Framework
-  MixedElasticEigenvalues.Statements.Cea MixedElasticEigenvalues.Statements.Boffi
-  MixedElasticEigenvalues.Statements.EigenvalueRate
+#report_axioms_of MixedElasticEigenvalues.Statements.Cea MixedElasticEigenvalues.Statements.Boffi
   MixedElasticEigenvalues.Statements.Postprocessing
   MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
   MixedElasticEigenvalues.Statements.APosteriori

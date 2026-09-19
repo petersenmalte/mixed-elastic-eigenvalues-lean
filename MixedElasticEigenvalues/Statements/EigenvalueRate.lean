@@ -56,10 +56,83 @@ theorem eigenvalue_rate {D : DiscreteFamily div X S₀ ι} {M : MaterialOperator
     (E : EigenpairFamily D M) (N : SobolevNorms H U) (k : ℕ) (R : EigenfunctionRates E N k) :
     ∃ C : ℝ, 0 < C ∧ ∀ i, |E.p.κ - (E.q i).κₕ|
       ≤ C * D.h i ^ (2 * k) * (N.hn k E.p.σ + N.un k E.p.u + N.hn k E.p.γ) ^ 2 := by
-  -- Not proved here. By `eigenvalue_identity` (Lemma 4.9),
+  -- By `eigenvalue_identity` (Lemma 4.9),
   -- `|κ - κₕ| ≤ ‖C‖ (‖C⁻¹‖ ‖σ - σₕ‖ + ‖γ - γₕ‖)² + 2|μ| ‖γ - γₕ‖² + K ‖u - uₕ‖²`,
-  -- and the rates give the claim with `C = (‖C‖ (‖C⁻¹‖ + 1)² + 2|μ| + K) C₁² + 1`.
-  sorry
+  -- and the rates give the claim with `C = (‖C‖ (‖C⁻¹‖ + 1)² + 2|μ| + |K|) C₁² + 1`.
+  refine ⟨(‖M.C‖ * (‖M.Cinv‖ + 1) ^ 2 + 2 * |μ| + |R.K|) * R.C₁ ^ 2 + 1, by positivity,
+    fun i => ?_⟩
+  have hid := eigenvalue_identity E.p (E.q i) (D.S_le i) (D.Xh_le i) E.u_norm (E.uₕ_norm i)
+  have hσγ := R.rate_σγ i
+  have hu := R.rate_u i
+  have hκ := R.κₕ_bound i
+  have hh := D.h_pos i
+  have hC₁ := R.C₁_nonneg
+  have hT1 := N.hn_nonneg k E.p.σ
+  have hT2 := N.un_nonneg k E.p.u
+  have hT3 := N.hn_nonneg k E.p.γ
+  obtain ⟨T, hT⟩ : ∃ T, T = N.hn k E.p.σ + N.un k E.p.u + N.hn k E.p.γ := ⟨_, rfl⟩
+  obtain ⟨B, hB⟩ : ∃ B, B = R.C₁ * D.h i ^ k * T := ⟨_, rfl⟩
+  rw [← hT]
+  set e := E.p.σ - (E.q i).σₕ with he
+  set d := E.p.γ - (E.q i).γₕ with hd
+  set w := E.p.u - (E.q i).uₕ with hw
+  have hT0 : 0 ≤ T := by rw [hT]; positivity
+  have hB0 : 0 ≤ B := by rw [hB]; positivity
+  have hr : ‖e‖ + ‖d‖ ≤ B := by
+    have h2 : 0 ≤ R.C₁ * D.h i ^ k := by positivity
+    calc ‖e‖ + ‖d‖ ≤ R.C₁ * D.h i ^ k * (N.hn k E.p.σ + N.hn k E.p.γ) := hσγ
+      _ ≤ R.C₁ * D.h i ^ k * T := by
+        apply mul_le_mul_of_nonneg_left _ h2
+        rw [hT]; linarith
+      _ = B := hB.symm
+  have hw1 : ‖w‖ ≤ B := by
+    calc ‖w‖ ≤ R.C₁ * D.h i ^ k * (N.un k E.p.u + N.hn k E.p.σ + N.hn k E.p.γ) := hu
+      _ = B := by rw [hB, hT]; ring
+  have hE0 : 0 ≤ energy M.C (M.Cinv e + d) := M.nonneg _
+  have hE1 : energy M.C (M.Cinv e + d) ≤ ‖M.C‖ * ‖M.Cinv e + d‖ ^ 2 := by
+    unfold energy
+    calc ⟪M.C (M.Cinv e + d), M.Cinv e + d⟫_ℝ
+        ≤ ‖M.C (M.Cinv e + d)‖ * ‖M.Cinv e + d‖ := real_inner_le_norm _ _
+      _ ≤ (‖M.C‖ * ‖M.Cinv e + d‖) * ‖M.Cinv e + d‖ :=
+          mul_le_mul_of_nonneg_right (M.C.le_opNorm _) (norm_nonneg _)
+      _ = ‖M.C‖ * ‖M.Cinv e + d‖ ^ 2 := by ring
+  have hξ : ‖M.Cinv e + d‖ ≤ (‖M.Cinv‖ + 1) * B := by
+    calc ‖M.Cinv e + d‖ ≤ ‖M.Cinv e‖ + ‖d‖ := norm_add_le _ _
+      _ ≤ ‖M.Cinv‖ * ‖e‖ + ‖d‖ := by have := M.Cinv.le_opNorm e; linarith
+      _ ≤ (‖M.Cinv‖ + 1) * (‖e‖ + ‖d‖) := by
+          nlinarith [norm_nonneg e, norm_nonneg d, norm_nonneg M.Cinv]
+      _ ≤ (‖M.Cinv‖ + 1) * B := by
+          apply mul_le_mul_of_nonneg_left hr; positivity
+  have hE2 : energy M.C (M.Cinv e + d) ≤ ‖M.C‖ * ((‖M.Cinv‖ + 1) * B) ^ 2 :=
+    hE1.trans (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hξ 2) (norm_nonneg _))
+  have hd2 : ‖d‖ ^ 2 ≤ B ^ 2 :=
+    pow_le_pow_left₀ (norm_nonneg _) (by linarith [norm_nonneg e]) 2
+  have hw2 : ‖w‖ ^ 2 ≤ B ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hw1 2
+  have hb : |2 * μ * ‖d‖ ^ 2| ≤ 2 * |μ| * B ^ 2 := by
+    rw [abs_mul, abs_mul, abs_two, abs_of_nonneg (pow_nonneg (norm_nonneg d) 2)]
+    exact mul_le_mul_of_nonneg_left hd2 (by positivity)
+  have hc : |(E.q i).κₕ * ‖w‖ ^ 2| ≤ |R.K| * B ^ 2 := by
+    rw [abs_mul, abs_of_nonneg (pow_nonneg (norm_nonneg w) 2)]
+    exact mul_le_mul (hκ.trans (le_abs_self _)) hw2 (by positivity) (abs_nonneg _)
+  have habs : |E.p.κ - (E.q i).κₕ|
+      ≤ energy M.C (M.Cinv e + d) + 2 * |μ| * B ^ 2 + |R.K| * B ^ 2 := by
+    rw [hid]
+    calc |energy M.C (M.Cinv e + d) - 2 * μ * ‖d‖ ^ 2 - (E.q i).κₕ * ‖w‖ ^ 2|
+        ≤ |energy M.C (M.Cinv e + d) - 2 * μ * ‖d‖ ^ 2| + |(E.q i).κₕ * ‖w‖ ^ 2| :=
+          abs_sub _ _
+      _ ≤ |energy M.C (M.Cinv e + d)| + |2 * μ * ‖d‖ ^ 2| + |(E.q i).κₕ * ‖w‖ ^ 2| := by
+          linarith [abs_sub (energy M.C (M.Cinv e + d)) (2 * μ * ‖d‖ ^ 2)]
+      _ ≤ _ := by rw [abs_of_nonneg hE0]; linarith
+  have hB2 : B ^ 2 = R.C₁ ^ 2 * D.h i ^ (2 * k) * T ^ 2 := by rw [hB]; ring
+  have hpos : 0 ≤ D.h i ^ (2 * k) * T ^ 2 := by positivity
+  calc |E.p.κ - (E.q i).κₕ|
+      ≤ energy M.C (M.Cinv e + d) + 2 * |μ| * B ^ 2 + |R.K| * B ^ 2 := habs
+    _ ≤ ‖M.C‖ * ((‖M.Cinv‖ + 1) * B) ^ 2 + 2 * |μ| * B ^ 2 + |R.K| * B ^ 2 := by linarith
+    _ = (‖M.C‖ * (‖M.Cinv‖ + 1) ^ 2 + 2 * |μ| + |R.K|) * B ^ 2 := by ring
+    _ = (‖M.C‖ * (‖M.Cinv‖ + 1) ^ 2 + 2 * |μ| + |R.K|) * R.C₁ ^ 2
+          * (D.h i ^ (2 * k) * T ^ 2) := by rw [hB2]; ring
+    _ ≤ ((‖M.C‖ * (‖M.Cinv‖ + 1) ^ 2 + 2 * |μ| + |R.K|) * R.C₁ ^ 2 + 1) * D.h i ^ (2 * k)
+          * T ^ 2 := by nlinarith [hpos]
 
 /-- The hypotheses of Theorem 4.10 are satisfiable: the trivial eigenpairs with all
 errors equal to zero. -/

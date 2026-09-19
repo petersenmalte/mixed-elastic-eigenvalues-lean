@@ -7,6 +7,8 @@ cd "$(dirname "$0")/.."
 proven=(
   MixedElasticEigenvalues/Material.lean
   MixedElasticEigenvalues/EigenvalueIdentities.lean
+  MixedElasticEigenvalues/Statements/Framework.lean
+  MixedElasticEigenvalues/Statements/EigenvalueRate.lean
 )
 
 status=0
