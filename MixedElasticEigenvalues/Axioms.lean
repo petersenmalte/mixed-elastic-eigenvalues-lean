@@ -1,6 +1,9 @@
 import Lean
 import MixedElasticEigenvalues.Material
 import MixedElasticEigenvalues.EigenvalueIdentities
+import MixedElasticEigenvalues.Statements.APosteriori
+import MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
+import MixedElasticEigenvalues.Statements.Boffi
 
 /-!
 # Axiom audit
@@ -45,6 +48,28 @@ elab "#check_axioms_of " mods:ident+ : command => do
   else
     throwError "axiom audit failed, disallowed axioms in: {bad}"
 
+/-- Print the axioms used by every declaration of the given modules without failing; used
+for the statement modules, whose theorems depend on `sorryAx` by design. -/
+elab "#report_axioms_of " mods:ident+ : command => do
+  let env ← getEnv
+  for m in mods do
+    let modName := m.getId
+    let some idx := env.getModuleIdx? modName
+      | throwError "axiom report: module {modName} is not imported"
+    let data := env.header.moduleData[idx.toNat]!
+    for n in data.constNames do
+      if n.isInternal then continue
+      let axs ← collectAxioms n
+      if axs.contains ``sorryAx then
+        logInfo m!"'{n}' depends on axioms: {axs.toList} (statement only)"
+
 end MixedElasticEigenvalues.Audit
 
 #check_axioms_of MixedElasticEigenvalues.Material MixedElasticEigenvalues.EigenvalueIdentities
+
+#report_axioms_of MixedElasticEigenvalues.Statements.Framework
+  MixedElasticEigenvalues.Statements.Cea MixedElasticEigenvalues.Statements.Boffi
+  MixedElasticEigenvalues.Statements.EigenvalueRate
+  MixedElasticEigenvalues.Statements.Postprocessing
+  MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
+  MixedElasticEigenvalues.Statements.APosteriori
