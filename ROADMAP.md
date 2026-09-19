@@ -1,16 +1,14 @@
-# Roadmap (preliminary)
+# Roadmap
 
-Numbers refer to the thesis in `thesis/`. Status: nothing is formalized yet.
+Numbers refer to the thesis in `thesis/`. The current status of every result is in the
+table of `README.md`; this file lists what is still open, in the suggested order.
 
-| Thesis | Content | Idea for Lean |
+| Step | Content | Notes |
 |---|---|---|
-| Ch. 3, Thm 3.2 | Well-posedness of saddle point problems (Brezzi) | Abstract Hilbert-space statement (inf-sup, coercivity on the kernel); Mathlib has Lax-Milgram only |
-| Ch. 4, Def 4.2 – Thm 4.7 | Convergence of discrete eigenvalue problems, weak/strong approximability (Boffi) | Abstract operator-theoretic statements, no finite elements needed |
-| Ch. 4, Thm 4.8, 4.10, Lemma 4.11, 4.14 | A priori estimates, estimate for P_h u − u_h | Needs abstract approximation assumptions; concrete Sobolev/FE facts stay as hypotheses at first |
-| Ch. 5, Def 5.5, Lemma 5.6 | Postprocessed eigenvalue as Rayleigh quotient, error identity | Good first target: purely algebraic/inner-product-space argument |
-| Ch. 5, Thm 5.1 | Local postprocessing, convergence of postprocessed eigenfunction | Depends on polynomial/FE approximation properties |
-| Ch. 6, Thm 6.2 – 6.4 | Reliable and efficient a posteriori estimator | Abstract identity first, estimator bounds later |
-
-Concrete finite element spaces (BDM, Falk element), Sobolev spaces on domains and the
-interpolation theory are the most expensive parts; the plan is to first formalize the
-abstract layer above with these ingredients as explicit hypotheses.
+| 1 | Prove `eigenvalue_rate` (Theorem 4.10) | Direct from `eigenvalue_identity` and the rate hypotheses; only operator-norm bounds for `C`, `C⁻¹` are needed. |
+| 2 | Prove `postprocessed_eigenvalue_rate` (Theorem 5.7) | Direct from `postprocessed_eigenvalue_identity`; needs `u*ₕ ≠ 0` for small `h` and the absorption argument. |
+| 3 | Prove `postprocessed_eigenfunction_rate` (Theorem 5.1) | Hilbert space argument; first prove `P*ₕ = Pₕ + P̃ₕ` (51) from the orthogonality relations. |
+| 4 | Prove `cea_estimate` (Theorem 3.1) and then `uniform_convergence` (Theorem 4.7) | Brezzi-type estimates with `Metric.infDist`; existence via finite dimensionality. |
+| 5 | Prove `reliability` (Theorem 6.2) and `eigenvalue_reliability` (Theorem 6.4) | Lemma 6.1 first. |
+| 6 | Connect `Material.lean` with the abstract layer | Frobenius inner product space structure on `Matrix (Fin 2) (Fin 2) ℝ` and a `MaterialOperator` instance built from `matC`/`matCinv`. |
+| 7 | Concrete finite elements | Triangulations, `BDMₖ`, Falk's element, Sobolev spaces on domains: the expensive part, currently out of reach of Mathlib. |
