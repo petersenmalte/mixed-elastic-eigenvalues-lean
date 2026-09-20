@@ -13,7 +13,7 @@ The theorem is split into its three assertions:
 * `cea_unique` — the discrete problem (17) has at most one solution. Proved.
 * `cea_quasi_optimal` / `cea_estimate` — the error estimate, in best-approximation form
   and in the `inf` form of the thesis. Proved.
-* `cea_existence` — existence of a discrete solution. Open (`sorry`); see there.
+* `cea_existence` — existence of a discrete solution, by finite-dimensional duality.
 -/
 
 namespace MixedElasticEigenvalues
@@ -316,15 +316,77 @@ theorem cea_quasi_optimal (D : DiscreteFamily div X S₀ ι) (M : MaterialOperat
     _ = (K / (hyp.α * hyp.β)) * (dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by ring
     _ ≤ (K / (hyp.α * hyp.β) + 1) * (dσ + ‖p.u - vₕ‖ + ‖p.γ - ηₕ‖) := by linarith [hsum0]
 
-/-- Existence for the discrete problem (17), p. 16. Not proved here: in the thesis it
-follows from Brezzi's splitting theorem [9]. In this abstract setting it follows from
-`cea_unique` together with the finite dimensionality of `Σₕ × Uₕ × Xₕ`, which requires
-assembling the three equations of (17) into a single linear map on the product space and
-applying `LinearMap.injective_iff_surjective`; that construction was not carried out. -/
+/-- Existence for the discrete problem (17), p. 16. The three equations define a linear
+map from `Σₕ × Uₕ × Xₕ` to its dual. Uniqueness makes this map injective, hence surjective
+because the domain and its dual have the same finite dimension. -/
 theorem cea_existence (D : DiscreteFamily div X S₀ ι) (M : MaterialOperator X μ)
     (hyp : CeaHypotheses D M) (i : ι) (f : U) :
     Nonempty (DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) f) := by
-  sorry
+  let := D.finite_S i
+  let := D.finite_Uh i
+  let := D.finite_Xh i
+  let P := D.S i × D.Uh i × D.Xh i
+  let F : P →ₗ[ℝ] Module.Dual ℝ P :=
+    { toFun := fun x =>
+        { toFun := fun y =>
+            ⟪M.Cinv x.1, y.1⟫_ℝ + ⟪div y.1, x.2.1⟫_ℝ + ⟪(x.2.2 : H), y.1⟫_ℝ
+              + ⟪div x.1, y.2.1⟫_ℝ + ⟪(x.1 : H), y.2.2⟫_ℝ
+          map_add' := by
+            intro y z
+            simp [P, Prod.add_def, inner_add_left, inner_add_right]
+            ring
+          map_smul' := by
+            intro r y
+            simp [P, Prod.smul_def, inner_smul_right, real_inner_smul_left]
+            ring }
+      map_add' := by
+        intro x z
+        apply LinearMap.ext
+        intro y
+        simp [P, Prod.add_def, inner_add_left, inner_add_right]
+        ring
+      map_smul' := by
+        intro r x
+        apply LinearMap.ext
+        intro y
+        simp [P, Prod.smul_def, inner_smul_right, real_inner_smul_left]
+        ring }
+  -- Testing the combined equation with one nonzero component recovers (17).
+  let solution (g : U) (x : P)
+      (hx : ∀ y : P, F x y = -⟪g, (y.2.1 : U)⟫_ℝ) :
+      DiscreteMixedSource div M (D.S i) (D.Uh i) (D.Xh i) g :=
+    { σₕ := x.1
+      uₕ := x.2.1
+      γₕ := x.2.2
+      σₕ_mem := x.1.property
+      uₕ_mem := x.2.1.property
+      γₕ_mem := x.2.2.property
+      eq₁ := by
+        intro τ hτ
+        simpa [F] using hx (⟨τ, hτ⟩, 0, 0)
+      eq₂ := by
+        intro v hv
+        simpa [F] using hx (0, ⟨v, hv⟩, 0)
+      eq₃ := by
+        intro η hη
+        simpa [F] using hx (0, 0, ⟨η, hη⟩) }
+  have hF : Function.Injective F := by
+    apply LinearMap.ker_eq_bot.mp
+    apply LinearMap.ker_eq_bot'.mpr
+    intro x hx
+    let q := solution 0 x (by intro y; simp [hx])
+    let q₀ := solution 0 0 (by intro y; simp)
+    obtain ⟨hσ, hu, hγ⟩ := cea_unique hyp i 0 q q₀
+    exact Prod.ext (Subtype.ext hσ) (Prod.ext (Subtype.ext hu) (Subtype.ext hγ))
+  have hsurj : Function.Surjective F :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (Subspace.dual_finrank_eq (K := ℝ) (V := P)).symm).mp hF
+  let b : Module.Dual ℝ P :=
+    { toFun := fun y => -⟪f, (y.2.1 : U)⟫_ℝ
+      map_add' := by intro y z; simp [P, Prod.add_def, inner_add_right]; ring
+      map_smul' := by intro r y; simp [P, Prod.smul_def, inner_smul_right] }
+  obtain ⟨x, hx⟩ := hsurj b
+  exact ⟨solution f x (fun y => congrArg (fun l : Module.Dual ℝ P => l y) hx)⟩
 
 /-- **Theorem 3.1** (p. 16, [5, Theorem 3.1]), quasi-optimality in the form stated in the
 thesis: `‖σ - σₕ‖₀ + ‖u - uₕ‖₀ + ‖γ - γₕ‖₀ ≤ C (inf ‖σ - τₕ‖₀ + inf ‖u - vₕ‖₀ +

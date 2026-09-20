@@ -30,7 +30,7 @@ jobs:
       - name: Build (all modules, includes the axiom audit in Axioms.lean)
         run: lake build
 
-      - name: No sorry in proven layers, no axiom / native_decide anywhere
+      - name: No unfinished proofs or extra axioms in any project module
         run: scripts/check_no_sorry.sh
 
       - name: Axiom audit report

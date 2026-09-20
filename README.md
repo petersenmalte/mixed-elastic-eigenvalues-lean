@@ -30,9 +30,9 @@ Three layers, in increasing distance from the thesis's proofs:
    Lean statements over abstract families of discrete spaces, with every finite
    element property (stability, approximation, postprocessing, interpolation) as a
    typed hypothesis (`structure`), each with a trivial model showing the hypotheses are
-   satisfiable. Theorems 4.7, 4.10, 5.1, 5.7, 6.2 and the uniqueness and error estimate
-   of Theorem 3.1 are proved; still open (`sorry`, each with a comment on what the proof
-   in the thesis needs) are the existence part of Theorem 3.1 and Theorem 6.4.
+   satisfiable. Theorems 3.1, 4.7, 4.10, 5.1, 5.7, 6.2 and 6.4 are proved under these
+   hypotheses. No project theorem contains an unfinished proof. Realizing the hypotheses
+   for concrete finite elements remains open; see **Limits** and `ROADMAP.md`.
 
 | Lean file / declaration | Thesis | Source | Status |
 |---|---|---|---|
@@ -57,7 +57,7 @@ Three layers, in increasing distance from the thesis's proofs:
 | `CeaHypotheses.coercive_discrete`, `div_eq_zero_of_isDiscreteKernel` | coercivity on `ker(Bₕ + Cₕ)`, p. 15; `div Σₕ ⊆ Uₕ`, p. 28 | thesis | proved |
 | `cea_unique` | uniqueness part of Theorem 3.1, p. 16 | thesis, [9] | proved from (19), (16) and (20) |
 | `cea_quasi_optimal`, `cea_estimate` | estimate of Theorem 3.1, p. 16 | [5, Thm 3.1], [9] | proved (best-approximation form, and the `inf` form of the thesis) |
-| `cea_existence` | existence part of Theorem 3.1, p. 16 | [9] | `sorry`: needs the three equations assembled into one linear map plus `LinearMap.injective_iff_surjective` |
+| `cea_existence` | existence part of Theorem 3.1, p. 16 | [9] | proved: the discrete system is an injective map to its dual, hence surjective by equality of finite dimensions |
 | `Statements/Boffi.lean`: `BoffiHypotheses` | Def. 4.4–4.6, pp. 27–28 | [3] | definitions; strong approximability of `X⁰` added as hypothesis |
 | `uniform_convergence` | Theorem 4.7, p. 28 | [3, Thm 14.6] | proved from `cea_estimate` plus approximability and regularity |
 | `Statements/EigenvalueRate.lean`: `EigenfunctionRates`, `eigenvalue_rate` | Theorem 4.10, p. 30 | thesis | proved from Lemma 4.9 and the rate hypotheses (squared form, see errata) |
@@ -69,10 +69,10 @@ Three layers, in increasing distance from the thesis's proofs:
 | `APosterioriData.skw_sol_eq_zero`, `skw_sub_eq` | third equation of (62), p. 44 | thesis | proved |
 | `APosterioriData.residual_bound` | central estimate of Lemma 6.1, p. 47 | thesis, [11], [23] | proved (Gauss, Scott–Zhang, (37), (52)) |
 | `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | proved from `stab`, `residual_bound`, `skw_sub_eq` and (67) |
-| `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | `sorry`: Lemma 5.6, Gauss' theorem, Young, Theorem 6.2, (67) |
+| `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | proved from Lemma 5.6, Gauss, Young, Theorem 6.2 and (67); no additional bound on `κ*ₕ` |
 | Proposition 2.1, Lemma 2.2, Theorem 3.2, Proposition 3.4, Lemma 3.5, Remark 3.6, Theorem 3.3 | pp. 13–22 | [4], [5], [7], [8], [10], [14] | not formalizable at this level (Sobolev spaces on domains, `H(div)`, Stokes, BDM interpolation) |
 | Theorem 4.8, Lemma 4.11, Lemma 4.14, Theorem 6.3 | pp. 29–34, 49 | thesis, [17] | not formalized (their content enters Stage 3 as rate hypotheses) |
-| Lemma 6.1 | p. 47 | thesis, [11] | partially: its central residual estimate is `residual_bound`; the assembly is part of the open Theorem 6.2 |
+| Lemma 6.1 | p. 47 | thesis, [11] | its central residual estimate is `residual_bound`; the stability and averaging argument is included in the proved Theorem 6.2 |
 | Chapter 7 | pp. 51–67 | thesis | numerical experiments, not formalizable |
 
 Every statement of layer 3 carries a docstring quoting the theorem of the thesis with its
@@ -87,16 +87,13 @@ The [CI workflow](https://github.com/petersenmalte/mixed-elastic-eigenvalues-lea
 
 1. `lake build` of every module under `MixedElasticEigenvalues/` (the `globs` in
    `lakefile.toml` make sure that files that are not imported are still checked);
-2. `scripts/check_no_sorry.sh`: fails if `sorry` occurs in any of the proved modules
-   (`Material.lean`, `EigenvalueIdentities.lean`, `Statements/Framework.lean`,
-   `Statements/EigenvalueRate.lean`, `Statements/Postprocessing.lean`,
-   `Statements/PostprocessedEigenvalue.lean`, `Statements/Boffi.lean`), or if
-   `axiom` / `native_decide` occur anywhere;
+2. `scripts/check_no_sorry.sh`: rejects `sorry`, `admit`, `axiom` declarations and
+   `native_decide` in every project Lean file, including newly added files;
 3. the axiom audit `MixedElasticEigenvalues/Axioms.lean` (run during `lake build` and again by
-   `scripts/check_axioms.sh`): `#print axioms` for every declaration of the proved
-   modules; the build fails if any axiom other than `propext`, `Classical.choice` and
-   `Quot.sound` is used (in particular `sorryAx`). For the remaining statement modules
-   the audit only reports which declarations depend on `sorryAx`.
+   `scripts/check_axioms.sh`): recursive axiom checks for every non-internal declaration
+   of all current mathematical modules, including `Cea` and `APosteriori`. The build
+   fails if any axiom other than `propext`, `Classical.choice` and `Quot.sound` is used
+   (in particular `sorryAx`). There are no exceptions for individual theorems.
 
 ## Build
 
@@ -136,6 +133,11 @@ nonnegative functions (`SobolevNorms`) that only appear in regularity hypotheses
 - **Chapter 7** (numerical experiments) has no formal counterpart.
 - The existence and uniqueness of the postprocessing (52) (pp. 37–38) and of the
   continuous problems (Chapter 2) are not formalized; solutions are part of the data.
+- The a posteriori bounds retain higher-order terms involving the exact solution and
+  eigenvalue. Their higher order or absorbability is not proved. In Theorem 6.4, the
+  retained squared eigenvalue error bounds errors at least one; for smaller errors,
+  `|κ*ₕ| ≤ |κ| + 1`. This proves the stated bound without an additional eigenvalue
+  hypothesis, but does not give a computable error bound in terms of `η` alone.
 
 ## Errata
 
