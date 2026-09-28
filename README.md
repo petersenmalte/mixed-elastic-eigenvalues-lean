@@ -17,7 +17,7 @@ and a posteriori error estimates.
 
 ## What is formalized
 
-Three layers, in increasing distance from the thesis's proofs:
+Four layers, in increasing distance from the thesis's proofs:
 
 1. **Material algebra** (`Material.lean`): pointwise linear algebra of `2×2` tensors,
    Chapter 2. Fully proved.
@@ -33,6 +33,13 @@ Three layers, in increasing distance from the thesis's proofs:
    satisfiable. Theorems 3.1, 4.7, 4.10, 5.1, 5.7, 6.2 and 6.4 are proved under these
    hypotheses. No project theorem contains an unfinished proof. Realizing the hypotheses
    for concrete finite elements remains open; see **Limits** and `ROADMAP.md`.
+4. **The continuous problem** (`Continuous/`): Proposition 2.1, Lemma 2.2, the
+   continuous inf-sup condition (13) and the coercivity (16) uniformly in `λ`, on
+   abstract `L²` spaces. The trace and deviator on `L²(Ω; ℝ²ˣ²)` are a
+   `TraceStructure` (two identities, from which the estimates of p. 13 follow); the
+   analytic input — Green's formula for `H¹₀`, a bounded right inverse of
+   `div : H¹₀ → L²₀` (Bogovskiĭ), and the two stress liftings of [5] — is a typed
+   hypothesis, and the proofs from it are complete.
 
 | Lean file / declaration | Thesis | Source | Status |
 |---|---|---|---|
@@ -71,7 +78,17 @@ Three layers, in increasing distance from the thesis's proofs:
 | `sq_estimator`, `res_le_estimator`, `vol_le_estimator`, `skw_le_estimator`, `jump_le_estimatorSq`, `grad_avg_le`, `avg_le` | components of `η²`, and (67), pp. 48, 50 | thesis, [20] | proved |
 | `APosterioriData.reliability` | Theorem 6.2, p. 48 | thesis, [11] | proved from `stab`, `residual_bound`, `skw_sub_eq` and (67) |
 | `APosterioriData.eigenvalue_reliability` | Theorem 6.4, p. 50 | thesis | proved from Lemma 5.6, Gauss, Young, Theorem 6.2 and (67); no additional bound on `κ*ₕ` |
-| Proposition 2.1, Lemma 2.2, Theorem 3.2, Proposition 3.4, Lemma 3.5, Remark 3.6, Theorem 3.3 | pp. 13–22 | [4], [5], [7], [8], [10], [14] | not formalizable at this level (Sobolev spaces on domains, `H(div)`, Stokes, BDM interpolation) |
+| `Continuous/Trace.lean`: `TraceStructure`, `dev` | trace and deviator on `L²(Ω; ℝ²ˣ²)`, pp. 9–10 | thesis | definitions (two identities: (12) integrated, `tr I = 2`) |
+| `tr_dev`, `dev_add`, `idm_tr`, `dev_idm`, `dev_dev`, `inner_dev_idm`, `norm_idm`, `norm_sq_eq` | (12) integrated, p. 13 | thesis | proved |
+| `norm_dev_le`, `norm_tr_le` | `‖dev τ‖₀ ≤ ‖τ‖₀`, `‖τ‖₀ ≥ c ‖tr τ‖₀`, p. 13 | thesis | proved (`c = 1/√2`) |
+| `Continuous/DevDiv.lean`: `DevDivData` | analytic input of Lemma 2.2 | [5] | hypotheses: `H¹₀`, Green's formula, `L²₀`, Bogovskiĭ right inverse of `div` |
+| `DevDivData.norm_tr_le`, `dev_div_estimate` | **Lemma 2.2**, p. 14 | [5, Prop. 1] | proved (for every `τ` with `∫ tr τ = 0`; no boundary condition needed) |
+| `Continuous/InfSup.lean`: `InfSupData` | analytic input of Proposition 2.1 | [5], [4] | hypotheses: bounded right inverse of `div : Σ₀ → U`, skew lifting by divergence-free stresses |
+| `infsup_lift`, `prop_2_1` | **Proposition 2.1**, p. 13 | [5, Prop. 2] | proved (with `Σ₀` for `Σ_g`, see errata) |
+| `continuous_infsup` | inf-sup condition (13), p. 13 | [9], [5] | proved (see errata) |
+| `Continuous/Coercivity.lean`: `IsIsotropicCinv`, `IsIsotropicCinv.inner_self`, `dev_le_inner`, `coercive_L2` | (4), reformulation of `a(σ,σ)` and `a(τ,τ) ≥ ‖τ‖₀²/(2(λ+μ))`, p. 13 | thesis | proved |
+| `coercive_uniform`, `coercive_uniform_kernel` | coercivity (16) on `ker(B + C) ∩ L²₀`, uniformly in `λ`, p. 14 | thesis, [5] | proved from Lemma 2.2 (see errata) |
+| Theorem 3.2, Proposition 3.4, Lemma 3.5, Remark 3.6, Theorem 3.3 | pp. 16–22 | [4], [7], [8], [10], [14] | not formalizable at this level (Sobolev spaces on domains, Stokes, BDM interpolation) |
 | Theorem 4.8, Lemma 4.11, Lemma 4.14, Theorem 6.3 | pp. 29–34, 49 | thesis, [17] | not formalized (their content enters Stage 3 as rate hypotheses) |
 | Lemma 6.1 | p. 47 | thesis, [11] | its central residual estimate is `residual_bound`; the stability and averaging argument is included in the proved Theorem 6.2 |
 | Chapter 7 | pp. 51–67 | thesis | numerical experiments, not formalizable |
@@ -126,9 +143,12 @@ nonnegative functions (`SobolevNorms`) that only appear in regularity hypotheses
   (Mathlib has Lax–Milgram, the spectral theorem for compact self-adjoint operators,
   and Sobolev spaces on `ℝⁿ` via Bessel potentials / distributions, but no bounded
   domains, traces, `H(div)`, finite elements, triangulations or Brezzi's splitting
-  theorem). Hence Proposition 2.1, Lemma 2.2, Theorem 3.2, the BDM interpolation of
-  Section 3.2 and the duality arguments of Section 4.2 are out of reach at this level,
-  and the `H(div)`-norm is modelled as `‖τ‖ + ‖div τ‖`.
+  theorem). Proposition 2.1 and Lemma 2.2 are therefore proved from typed analytic
+  hypotheses (Green's formula for `H¹₀`, Bogovskiĭ's right inverse of the divergence,
+  the stress liftings of [5]), which are standard facts on bounded Lipschitz domains but
+  are not themselves proved here. Theorem 3.2, the BDM interpolation of Section 3.2 and
+  the duality arguments of Section 4.2 are out of reach at this level, and the
+  `H(div)`-norm is modelled as `‖τ‖ + ‖div τ‖`.
 - **Element-wise quantities** `Σ_T h_T² ‖·‖²_T` and `Σ_E h_E⁻¹ ‖[·]‖²_E` of Chapter 6 are
   replaced by `h² ‖·‖²` (uniform mesh, p. 8) and by an abstract jump seminorm.
 - **Chapter 7** (numerical experiments) has no formal counterpart.
@@ -161,6 +181,16 @@ Found while formalizing; none affects the results of the thesis.
 5. **Theorem 4.7, p. 28**, lists approximability of `U⁰` only; the third component
    `‖Tf − Tₕf‖₀` also needs strong approximability of `X⁰` (`BoffiHypotheses.strongX`),
    which holds for Falk's element by the same argument.
+6. **Proposition 2.1, p. 13**, asserts `τ ∈ Σ_g`. For `g ≠ 0` this contradicts the bound
+   `‖τ‖_{H(div)} ≤ C (‖v‖₀ + ‖η‖₀)`, which forces `τ = 0 ∉ Σ_g` for `v = η = 0`. The
+   correct space, as in [5, Proposition 2], is the test space `Σ₀`; `prop_2_1` uses it.
+7. **The inf-sup condition (13), p. 13**, has `τ` outside the supremum. It should read
+   `inf_{v, η} sup_{τ} (b(τ, v) + c(η, τ)) / (‖τ‖_{H(div)} (‖v‖₀ + ‖η‖₀)) ≥ β > 0`, the
+   continuous analogue of (20); `continuous_infsup` proves this form.
+8. **(16), p. 14**, reads `a(τ, τ) ≥ 1/(2μ) ‖dev τ‖₀ ≥ 1/(2μ) ‖τ‖₀`. The norms must be
+   squared, and the last step uses Lemma 2.2, whose constant `C` is missing: correct is
+   `a(τ, τ) ≥ 1/(2μ) ‖dev τ‖₀² ≥ 1/(2μC²) ‖τ‖₀²`. The conclusion (a coercivity constant
+   independent of `λ`) is unaffected; `coercive_uniform` proves the corrected chain.
 
 ## Rights
 
