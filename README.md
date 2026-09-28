@@ -74,6 +74,9 @@ Four layers, in increasing distance from the thesis's proofs:
 | `DiscreteMixedSource.div_eq`, `div_σOp` | `div σₕ = -f` for `f ∈ Uₕ` (`div Σₕ ⊆ Uₕ`, p. 28) | thesis | proved |
 | `uOp_eigenpair`, `eigenpair_eq_ops`, `eigenpairOfEigenvector`, `DiscreteMixedEigenpair.toSource` | (37) is the eigenproblem `Tₕuₕ = κₕ⁻¹uₕ` of the discrete solution operator | thesis, [3] | proved (both directions) |
 | `solve_estimate` | Theorem 3.1 for the constructed solutions | thesis | proved |
+| `Statements/ContinuousSource.lean`: `SourceHypotheses`, `source_unique` | uniqueness for (11) from (16) and the continuous inf-sup condition, pp. 13–14 | thesis, [5] | proved; existence (Brezzi) is the hypothesis `exists_sol` |
+| `SourceHypotheses.σOp`, `uOp`, `γOp`, `div_σOp`, `uOp_eigenpair`, `eigenpairOfEigenvector` | solution operator `T`; (36) is the eigenproblem `Tu = κ⁻¹u` | thesis, [3] | proved |
+| `SourceHypotheses.op_error` | Theorem 3.1 as an estimate of `T f - Tₕ f` | thesis | proved |
 | `Statements/Boffi.lean`: `BoffiHypotheses` | Def. 4.4–4.6, pp. 27–28 | [3] | definitions; strong approximability of `X⁰` added as hypothesis |
 | `uniform_convergence` | Theorem 4.7, p. 28 | [3, Thm 14.6] | proved from `cea_estimate` plus approximability and regularity |
 | `Statements/EigenvalueRate.lean`: `EigenfunctionRates`, `eigenvalue_rate` | Theorem 4.10, p. 30 | thesis | proved from Lemma 4.9 and the rate hypotheses (squared form, see errata) |
