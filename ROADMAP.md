@@ -9,7 +9,7 @@ axiom checks, and unfinished proofs are rejected throughout the project.
 
 | Step | Content | Notes |
 |---|---|---|
-| 1 | Connect `Material.lean` with the abstract layer | Frobenius inner product space structure on the `2×2` matrices and a `MaterialOperator` built from `matC`/`matCinv`. |
+| 1 | ~~Connect `Material.lean` with the abstract layer~~ | Done in `IsotropicMaterial.lean` (pointwise, on `Tens2`). Lifting it to `L²(Ω; ℝ²ˣ²)` is part of step 6. |
 | 2 | Connect the abstract results | Construct discrete solution data using `cea_existence`; derive the input rates of Theorem 5.7 from Theorem 5.1 and the remaining rate hypotheses. Require a nontrivial refinement filter (`NeBot`) in `DiscreteFamily`. |
 | 3 | Construct postprocessing and solution operators | Prove existence and uniqueness of the postprocessing; develop the continuous source problem rather than supplying its solutions as data. |
 | 4 | Derive eigenfunction and superconvergence rates | Supply the spectral approximation argument and the content of Theorem 4.8 and Lemmas 4.11 and 4.14 that currently enter as hypotheses. |

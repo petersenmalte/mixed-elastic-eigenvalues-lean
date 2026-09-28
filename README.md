@@ -23,7 +23,8 @@ Four layers, in increasing distance from the thesis's proofs:
    Chapter 2. Fully proved.
 2. **Abstract eigenvalue identities** (`EigenvalueIdentities.lean`): Lemma 4.9 and
    Lemma 5.6 in an abstract real inner product space, with the variational equations
-   (36), (37) and (53) as hypotheses. Fully proved. Square roots `C^{±1/2}` of the
+   (36), (37) and (53) as hypotheses. Fully proved. `IsotropicMaterial.lean` shows that the
+   isotropic material law of layer 1 is an instance of the abstract `MaterialOperator`. Square roots `C^{±1/2}` of the
    material operator are avoided by working with the quadratic forms `⟪Cξ, ξ⟫`
    and `⟪C⁻¹τ, τ⟫` (definition (5)).
 3. **Theorem statements** (`Statements/`): the main theorems of Chapters 3–6 as
@@ -55,6 +56,8 @@ Four layers, in increasing distance from the thesis's proofs:
 | `dev_matCinv` | `dev(C⁻¹τ) = dev τ/(2μ)`, p. 14 | thesis | proved |
 | `frob_matC_symm`, `frob_matC_self`, `frob_matC_self_nonneg`, `frob_matC_self_pos` | symmetry and positive definiteness of `C` | thesis | proved (`μ > 0`, `λ + μ > 0`) |
 | `matC_of_skew`, `matCinv_of_skew`, `frob_matC_skew` | `Cγ = 2μγ` for skew `γ`, p. 30 | thesis | proved |
+| `IsotropicMaterial.lean`: `Tens2`, `skewSubspace`, `isotropicMaterial` | Frobenius inner product (p. 7), `X` (9), `C`, `C⁻¹` (3), (4) as a `MaterialOperator` | thesis | proved: `Mat2` with `σ : τ` is an inner product space, and `matC`/`matCinv` satisfy every field of `MaterialOperator` for `μ > 0`, `λ + μ > 0` |
+| `isotropicMaterial_pos`, `isotropicMaterial_inner_Cinv`, `isotropicMaterial_Cinv_coercive`, `inner_sym_skew` | positive definiteness of `C`; `a(σ,τ)` via `dev`/`tr` and its coercivity, p. 13; `sym ⟂ skw`, p. 7 | thesis | proved |
 | `EigenvalueIdentities.lean`: `MaterialOperator`, `MixedEigenpair`, `DiscreteMixedEigenpair` | (36), (37), p. 26 | thesis | definitions (hypotheses) |
 | `energy_Cinv_add` | `‖C⁻¹e + d‖²_{C^{1/2}}` expansion, p. 30 | thesis | proved |
 | `eigenvalue_identity`, `eigenvalue_identity_raw` | Lemma 4.9, p. 30 | thesis | proved |

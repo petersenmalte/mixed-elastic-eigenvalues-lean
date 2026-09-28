@@ -6,6 +6,7 @@ import MixedElasticEigenvalues.Continuous.TraceL2
 import MixedElasticEigenvalues.Continuous.DevDiv
 import MixedElasticEigenvalues.Continuous.InfSup
 import MixedElasticEigenvalues.Continuous.Coercivity
+import MixedElasticEigenvalues.IsotropicMaterial
 import MixedElasticEigenvalues.Statements.Framework
 import MixedElasticEigenvalues.Statements.Cea
 import MixedElasticEigenvalues.Statements.Boffi
