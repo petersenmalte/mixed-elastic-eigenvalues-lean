@@ -43,6 +43,98 @@ Four layers, in increasing distance from the thesis's proofs:
    `div : H¹₀ → L²₀` (Bogovskiĭ), and the two stress liftings of [5] — is a typed
    hypothesis, and the proofs from it are complete.
 
+## Status at a glance
+
+| | meaning |
+|---|---|
+| ✅ | **Proved.** Complete Lean proof, checked by the axiom audit, resting on no unproved project hypothesis. |
+| 🟡 | **Proved conditionally.** Complete, machine-checked Lean proof — but from a typed hypothesis structure whose fields are *not* proved here (Sobolev/`H(div)` facts, or finite element properties). The implication is verified, the premises are not. |
+| ❌ | **Not formalized.** |
+
+A 🟡 result is as rigorous as its hypotheses: the Lean proof contains no gap, but it
+assumes standard analysis or finite element theory that Mathlib does not have yet. The
+last column names what is assumed. Realizing those hypotheses is steps 6–7 of
+`ROADMAP.md`.
+
+### Chapter 2 — Notations and preliminaries
+
+| | Result | Assumed |
+|---|---|---|
+| ✅ | Material law (3), (4), (6), identities (12); pointwise `2×2` algebra | — |
+| ✅ | Isotropic law is an abstract `MaterialOperator` (`IsotropicMaterial.lean`) | — |
+| ✅ | Trace, deviator and `L²₀(Ω)` on the Lebesgue spaces `MeasureTheory.Lp` | — |
+| ✅ | `‖dev τ‖₀ ≤ ‖τ‖₀`, `‖τ‖₀ ≥ ‖tr τ‖₀/√2` (p. 13) | — |
+| 🟡 | **Proposition 2.1** (p. 13) | `InfSupData`: right inverse of `div`, skew lifting |
+| 🟡 | inf-sup condition **(13)** | `InfSupData` |
+| 🟡 | **Lemma 2.2**, dev–div inequality (p. 14) | `DevDivData`: Green's formula, Bogovskiĭ |
+| 🟡 | coercivity **(16)**, uniformly in `λ` (p. 14) | via Lemma 2.2 |
+| 🟡 | uniqueness for the source problem **(11)** | (16) and (13) |
+| ❌ | existence for **(11)** (Brezzi's splitting theorem in `H(div)`) | — |
+
+### Chapter 3 — Finite elements
+
+| | Result | Assumed |
+|---|---|---|
+| 🟡 | **Theorem 3.1** (Céa): uniqueness, error estimate, existence | `CeaHypotheses`: (19), inf-sup (20), Fortin operator |
+| ❌ | **Theorem 3.2** (Stokes well-posedness) | — |
+| ❌ | **Theorem 3.3** (projection estimate, Bramble–Hilbert) | — |
+| ❌ | **Proposition 3.4**, **Lemma 3.5** (BDM degrees of freedom, `Πₕ`, (33), (34)) | — |
+| ❌ | Triangulations, `BDMₖ`, Falk's element, polynomial spaces (Section 3.2) | — |
+
+### Chapter 4 — A priori error analysis
+
+| | Result | Assumed |
+|---|---|---|
+| ❌ | Definitions 4.1–4.2, **Proposition 4.3** (gap, convergence of eigenvalue problems) | — |
+| 🟡 | Definitions 4.4–4.6 (weak/strong approximability, Fortid) | stated as `BoffiHypotheses` fields |
+| 🟡 | **Theorem 4.7** (uniform convergence of `R`, `S`, `T`) | `BoffiHypotheses`, Theorem 3.1 |
+| ❌ | **Theorem 4.8** (a priori estimates for the source problem) | — |
+| ✅ | **Lemma 4.9** (eigenvalue identity, p. 30) | — |
+| 🟡 | **Theorem 4.10** (a priori eigenvalue error) | `EigenfunctionRates` (content of Thm 4.8) |
+| ❌ | **Lemma 4.11**, **Lemma 4.14** (`‖Pₕu − uₕ‖₀`, duality) | — |
+
+### Chapter 5 — Postprocessing
+
+| | Result | Assumed |
+|---|---|---|
+| ✅ | `L²`-projections; `P*ₕ = Pₕ + P̃ₕ` **(51)** | — |
+| 🟡 | Postprocessing **(52)**, **(53)**: existence and uniqueness | `PostprocessingSpaces`: `dim Ũₕ < ∞`, `∇` injective (Poincaré) |
+| 🟡 | **Theorem 5.1** (postprocessed eigenfunction) | `PostprocessingRates`: (55), (57), (58), Poincaré, inverse estimate |
+| ✅ | Definition 5.5 (`κ*ₕ` as Rayleigh quotient) | — |
+| ✅ | **Lemma 5.6**, identity **(60)** (p. 41) | — |
+| 🟡 | **Theorem 5.7** (postprocessed eigenvalue) | input derived from Thms 4.10 and 5.1 (`RateChain.lean`) |
+
+### Chapter 6 — A posteriori error analysis
+
+| | Result | Assumed |
+|---|---|---|
+| 🟡 | Primal mixed problem **(62)**, estimator `η` | `APosterioriData` |
+| 🟡 | **Lemma 6.1** (residual estimate) | `APosterioriData`: stability, Scott–Zhang |
+| 🟡 | **Theorem 6.2** (reliability) | `APosterioriData`, (67) |
+| ❌ | **Theorem 6.3** (efficiency) | — |
+| 🟡 | **Theorem 6.4** (postprocessed eigenvalue error `≲ η² + h.o.t.`) | Lemma 5.6, Theorem 6.2 |
+
+### Chapter 7
+
+| | Result | Assumed |
+|---|---|---|
+| ❌ | Numerical experiments — no formal counterpart | — |
+
+**Summary.** Of the 21 numbered results of the thesis:
+
+* ✅ **2 proved outright** — Lemmas 4.9 and 5.6. Chapter 2's unnumbered material algebra,
+  the trace and deviator estimates of p. 13 and the projection identity (51) are proved
+  outright as well.
+* 🟡 **10 proved conditionally** — Proposition 2.1, Lemma 2.2, Theorems 3.1, 4.7, 4.10,
+  5.1, 5.7, Lemma 6.1, Theorems 6.2 and 6.4.
+* ❌ **9 not formalized** — Theorems 3.2, 3.3, Proposition 3.4, Lemma 3.5,
+  Proposition 4.3, Theorem 4.8, Lemmas 4.11 and 4.14, Theorem 6.3.
+
+No proof in the project contains a gap: `sorry` is rejected in every file and the axiom
+audit covers every declaration of every mathematical module.
+
+## Detailed status
+
 | Lean file / declaration | Thesis | Source | Status |
 |---|---|---|---|
 | `Material.lean`: `frob`, `frobSq`, `skw`, `sym`, `dev`, `matC`, `matCinv` | Ch. 2, pp. 7–10; (3), (4) | thesis | definitions |
