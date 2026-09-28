@@ -59,4 +59,5 @@ end MixedElasticEigenvalues.Audit
   MixedElasticEigenvalues.Statements.Postprocessing
   MixedElasticEigenvalues.Statements.Boffi
   MixedElasticEigenvalues.Statements.Cea
+  MixedElasticEigenvalues.Statements.DiscreteSolution
   MixedElasticEigenvalues.Statements.APosteriori

@@ -9,6 +9,7 @@ import MixedElasticEigenvalues.Continuous.Coercivity
 import MixedElasticEigenvalues.IsotropicMaterial
 import MixedElasticEigenvalues.Statements.Framework
 import MixedElasticEigenvalues.Statements.Cea
+import MixedElasticEigenvalues.Statements.DiscreteSolution
 import MixedElasticEigenvalues.Statements.Boffi
 import MixedElasticEigenvalues.Statements.EigenvalueRate
 import MixedElasticEigenvalues.Statements.Postprocessing

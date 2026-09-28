@@ -70,6 +70,10 @@ Four layers, in increasing distance from the thesis's proofs:
 | `cea_unique` | uniqueness part of Theorem 3.1, p. 16 | thesis, [9] | proved from (19), (16) and (20) |
 | `cea_quasi_optimal`, `cea_estimate` | estimate of Theorem 3.1, p. 16 | [5, Thm 3.1], [9] | proved (best-approximation form, and the `inf` form of the thesis) |
 | `cea_existence` | existence part of Theorem 3.1, p. 16 | [9] | proved: the discrete system is an injective map to its dual, hence surjective by equality of finite dimensions |
+| `Statements/DiscreteSolution.lean`: `CeaHypotheses.solve`, `σOp`, `uOp`, `γOp`, `DiscreteMixedSource.add`, `.smul` | discrete solution operators of (17), Theorem 3.1 | thesis | constructed from `cea_existence`; linear by `cea_unique` |
+| `DiscreteMixedSource.div_eq`, `div_σOp` | `div σₕ = -f` for `f ∈ Uₕ` (`div Σₕ ⊆ Uₕ`, p. 28) | thesis | proved |
+| `uOp_eigenpair`, `eigenpair_eq_ops`, `eigenpairOfEigenvector`, `DiscreteMixedEigenpair.toSource` | (37) is the eigenproblem `Tₕuₕ = κₕ⁻¹uₕ` of the discrete solution operator | thesis, [3] | proved (both directions) |
+| `solve_estimate` | Theorem 3.1 for the constructed solutions | thesis | proved |
 | `Statements/Boffi.lean`: `BoffiHypotheses` | Def. 4.4–4.6, pp. 27–28 | [3] | definitions; strong approximability of `X⁰` added as hypothesis |
 | `uniform_convergence` | Theorem 4.7, p. 28 | [3, Thm 14.6] | proved from `cea_estimate` plus approximability and regularity |
 | `Statements/EigenvalueRate.lean`: `EigenfunctionRates`, `eigenvalue_rate` | Theorem 4.10, p. 30 | thesis | proved from Lemma 4.9 and the rate hypotheses (squared form, see errata) |
