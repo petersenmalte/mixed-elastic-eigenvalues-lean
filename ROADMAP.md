@@ -10,7 +10,7 @@ axiom checks, and unfinished proofs are rejected throughout the project.
 | Step | Content | Notes |
 |---|---|---|
 | 1 | ~~Connect `Material.lean` with the abstract layer~~ | Done in `IsotropicMaterial.lean` (pointwise, on `Tens2`). Lifting it to `L²(Ω; ℝ²ˣ²)` is part of step 6. |
-| 2 | Connect the abstract results | Done: `NeBot` in `DiscreteFamily`; discrete solution operators in `DiscreteSolution.lean`. Open: derive the input rates of Theorem 5.7 from Theorem 5.1 and the remaining rate hypotheses. |
+| 2 | ~~Connect the abstract results~~ | Done: `NeBot` in `DiscreteFamily`; discrete solution operators in `DiscreteSolution.lean`; Theorem 5.7 from the input of Theorems 4.10 and 5.1 in `RateChain.lean`. |
 | 3 | Construct postprocessing and solution operators | Prove existence and uniqueness of the postprocessing; develop the continuous source problem rather than supplying its solutions as data. |
 | 4 | Derive eigenfunction and superconvergence rates | Supply the spectral approximation argument and the content of Theorem 4.8 and Lemmas 4.11 and 4.14 that currently enter as hypotheses. |
 | 5 | Control the a posteriori remainder | Formalize Theorem 6.3 and prove the relevant higher-order or absorption estimates for `hot`; the present reliability bounds still contain exact-solution errors. |

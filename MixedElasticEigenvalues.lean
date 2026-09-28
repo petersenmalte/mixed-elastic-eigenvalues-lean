@@ -14,4 +14,5 @@ import MixedElasticEigenvalues.Statements.Boffi
 import MixedElasticEigenvalues.Statements.EigenvalueRate
 import MixedElasticEigenvalues.Statements.Postprocessing
 import MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
+import MixedElasticEigenvalues.Statements.RateChain
 import MixedElasticEigenvalues.Statements.APosteriori

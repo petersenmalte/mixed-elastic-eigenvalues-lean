@@ -81,6 +81,9 @@ Four layers, in increasing distance from the thesis's proofs:
 | `proj_unique`, `proj_eq_self`, `proj_sub`, `pstar_eq`, `ph_ustar` | (50), (51), (52), p. 36 | thesis | proved |
 | `postprocessed_eigenfunction_rate` | Theorem 5.1, pp. 38–40 | thesis, [18], [24] | proved from (51), (55), (57), (58), Poincaré and inverse estimates |
 | `Statements/PostprocessedEigenvalue.lean`: `PostprocessedEigenvalueRates`, `postprocessed_eigenvalue_rate` | Theorem 5.7, p. 43 | thesis | proved from Lemma 5.6, the rate hypotheses and a Rayleigh-quotient bound for `κ*ₕ`, for `h ≤ h₀` (squared form, see errata) |
+| `Statements/RateChain.lean`: `MixedEigenpair.div_eq`, `EigenpairFamily.div_sub_eq`, `norm_div_sub_le` | `div σ = -κu`; `div(σ - σₕ) = κₕuₕ - κu`, p. 43 | thesis | proved |
+| `EigenpairFamily.div_rate` | `‖div(σ - σₕ)‖₀ ≤ C hᵏ(…)` from Theorems 4.8 and 4.10, p. 43 | thesis | proved |
+| `PostprocessingRates.toPostprocessedEigenvalueRates`, `postprocessed_eigenvalue_rate_of_rates` | Theorem 5.7 from the input of Theorems 4.10 and 5.1, p. 43 | thesis | proved (plus a comparison of the Sobolev norms of orders `k` and `k+1`, `k+2`) |
 | `Statements/APosteriori.lean`: `APosterioriData`, `estimatorSq`, `estimator`, `Postprocessing.hot` | estimator `η`, (62), (67), pp. 44–48 | thesis, [11] | definitions |
 | `APosterioriData.skw_sol_eq_zero`, `skw_sub_eq` | third equation of (62), p. 44 | thesis | proved |
 | `APosterioriData.residual_bound` | central estimate of Lemma 6.1, p. 47 | thesis, [11], [23] | proved (Gauss, Scott–Zhang, (37), (52)) |

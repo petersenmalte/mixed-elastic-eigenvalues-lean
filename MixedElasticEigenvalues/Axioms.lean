@@ -56,6 +56,7 @@ end MixedElasticEigenvalues.Audit
   MixedElasticEigenvalues.IsotropicMaterial
   MixedElasticEigenvalues.Statements.Framework MixedElasticEigenvalues.Statements.EigenvalueRate
   MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
+  MixedElasticEigenvalues.Statements.RateChain
   MixedElasticEigenvalues.Statements.Postprocessing
   MixedElasticEigenvalues.Statements.Boffi
   MixedElasticEigenvalues.Statements.Cea
