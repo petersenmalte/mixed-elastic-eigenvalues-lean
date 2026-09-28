@@ -11,10 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The installer downloads the elan release from GitHub, which occasionally resets the
+      # connection on the runner; retry so that a transient network error does not fail CI.
       - name: Install elan
         run: |
-          curl -sSfL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          for attempt in 1 2 3 4 5; do
+            if curl -sSfL --retry 5 --retry-connrefused --retry-delay 5 \
+                https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none; then
+              echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+              exit 0
+            fi
+            echo "elan install attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+          echo "::error::could not install elan after 5 attempts"
+          exit 1
 
       # Fallback only: lake-manifest.json is committed, so this step normally does nothing.
       - name: Resolve dependencies (only if lake-manifest.json is missing)
