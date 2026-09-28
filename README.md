@@ -80,6 +80,8 @@ Four layers, in increasing distance from the thesis's proofs:
 | `Statements/Postprocessing.lean`: `Postprocessing`, `PostprocessingRates` | (52), (53), pp. 37–38 | thesis, [18], [24] | definitions (hypotheses) |
 | `proj_unique`, `proj_eq_self`, `proj_sub`, `pstar_eq`, `ph_ustar` | (50), (51), (52), p. 36 | thesis | proved |
 | `postprocessed_eigenfunction_rate` | Theorem 5.1, pp. 38–40 | thesis, [18], [24] | proved from (51), (55), (57), (58), Poincaré and inverse estimates |
+| `Statements/PostprocessingExistence.lean`: `exists_grad_galerkin`, `exists_postprocessed`, `postprocessed_unique` | existence and uniqueness of the postprocessing (52), p. 37 | thesis | proved (finite-dimensional Lax–Milgram on `Ũₕ`; `∇` injective on `Ũₕ` by Poincaré, `grad_inj_of_poincare`) |
+| `PostprocessingSpaces.toPostprocessing`, `Postprocessing.ustar_unique`, `PostprocessingRates.ustar_unique` | `u*ₕ` constructed from the spaces (50)–(51); every `Postprocessing` uses the unique `u*ₕ` | thesis | proved |
 | `Statements/PostprocessedEigenvalue.lean`: `PostprocessedEigenvalueRates`, `postprocessed_eigenvalue_rate` | Theorem 5.7, p. 43 | thesis | proved from Lemma 5.6, the rate hypotheses and a Rayleigh-quotient bound for `κ*ₕ`, for `h ≤ h₀` (squared form, see errata) |
 | `Statements/RateChain.lean`: `MixedEigenpair.div_eq`, `EigenpairFamily.div_sub_eq`, `norm_div_sub_le` | `div σ = -κu`; `div(σ - σₕ) = κₕuₕ - κu`, p. 43 | thesis | proved |
 | `EigenpairFamily.div_rate` | `‖div(σ - σₕ)‖₀ ≤ C hᵏ(…)` from Theorems 4.8 and 4.10, p. 43 | thesis | proved |
