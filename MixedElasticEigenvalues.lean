@@ -4,6 +4,7 @@ import MixedElasticEigenvalues.EigenvalueIdentities
 import MixedElasticEigenvalues.Continuous.Trace
 import MixedElasticEigenvalues.Continuous.DevDiv
 import MixedElasticEigenvalues.Continuous.InfSup
+import MixedElasticEigenvalues.Continuous.Coercivity
 import MixedElasticEigenvalues.Statements.Framework
 import MixedElasticEigenvalues.Statements.Cea
 import MixedElasticEigenvalues.Statements.Boffi

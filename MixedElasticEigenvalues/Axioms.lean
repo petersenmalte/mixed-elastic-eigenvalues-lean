@@ -51,6 +51,7 @@ end MixedElasticEigenvalues.Audit
   MixedElasticEigenvalues.Continuous.Trace
   MixedElasticEigenvalues.Continuous.DevDiv
   MixedElasticEigenvalues.Continuous.InfSup
+  MixedElasticEigenvalues.Continuous.Coercivity
   MixedElasticEigenvalues.Statements.Framework MixedElasticEigenvalues.Statements.EigenvalueRate
   MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
   MixedElasticEigenvalues.Statements.Postprocessing
