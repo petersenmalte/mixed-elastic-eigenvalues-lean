@@ -45,7 +45,9 @@ theorem hdivNorm_nonneg (div : H →ₗ[ℝ] U) (τ : H) : 0 ≤ hdivNorm div τ
 
 /-- A family of conforming discrete spaces `Sₕ = Σ_{g,h} ⊆ S₀`, `Uₕ ⊆ U`, `Xₕ ⊆ X`
 indexed by meshes `i : ι` with mesh size `h i > 0` (Chapter 3). The refinement filter `l`
-expresses "`h → 0`"; `div Sₕ ⊆ Uₕ` holds for Falk's element (p. 23, Remark 3.6). -/
+expresses "`h → 0`"; it is required to be nontrivial (`l_neBot`), so that arbitrarily fine
+meshes exist (`DiscreteFamily.exists_h_lt`) and statements "for `h ≤ h₀`" are not vacuous.
+`div Sₕ ⊆ Uₕ` holds for Falk's element (p. 23, Remark 3.6). -/
 structure DiscreteFamily (div : H →ₗ[ℝ] U) (X S₀ : Submodule ℝ H) (ι : Type*) where
   S : ι → Submodule ℝ H
   Uh : ι → Submodule ℝ U
@@ -59,7 +61,32 @@ structure DiscreteFamily (div : H →ₗ[ℝ] U) (X S₀ : Submodule ℝ H) (ι 
   finite_Uh : ∀ i, FiniteDimensional ℝ (Uh i)
   finite_Xh : ∀ i, FiniteDimensional ℝ (Xh i)
   l : Filter ι
+  l_neBot : l.NeBot
   h_tendsto : Tendsto h l (𝓝 0)
+
+namespace DiscreteFamily
+
+variable {div : H →ₗ[ℝ] U} {X S₀ : Submodule ℝ H} {ι : Type*} (D : DiscreteFamily div X S₀ ι)
+
+/-- Eventually along the refinement, the mesh size is below any given `ε > 0`. -/
+theorem eventually_h_lt {ε : ℝ} (hε : 0 < ε) : ∀ᶠ i in D.l, D.h i < ε :=
+  D.h_tendsto.eventually (gt_mem_nhds hε)
+
+/-- Arbitrarily fine meshes exist: for every `ε > 0` there is a mesh with `h < ε`. -/
+theorem exists_h_lt {ε : ℝ} (hε : 0 < ε) : ∃ i, D.h i < ε :=
+  haveI := D.l_neBot
+  (D.eventually_h_lt hε).exists
+
+/-- For every `h₀ > 0` there is a mesh with `h ≤ h₀`: the conclusions "for all meshes with
+`h ≤ h₀`" of Theorems 5.7 and 6.4 are never vacuous. -/
+theorem exists_h_le {h₀ : ℝ} (hh₀ : 0 < h₀) : ∃ i, D.h i ≤ h₀ :=
+  (D.exists_h_lt hh₀).imp fun _ hi => hi.le
+
+include D in
+/-- The index type of a discrete family is nonempty. -/
+theorem nonempty_index : Nonempty ι := (D.exists_h_lt one_pos).elim fun i _ => ⟨i⟩
+
+end DiscreteFamily
 
 /-- `τ ∈ ker (B + C)` (p. 14): `τ ∈ S₀` with `(div τ, v) = 0` for all `v` and `(τ, η) = 0`
 for all skew-symmetric `η`. -/
@@ -134,6 +161,7 @@ def trivialFamily : DiscreteFamily (LinearMap.id : ℝ →ₗ[ℝ] ℝ) (⊥ : S
   finite_Uh := fun _ => inferInstance
   finite_Xh := fun _ => inferInstance
   l := atTop
+  l_neBot := atTop_neBot
   h_tendsto := tendsto_one_div_add_atTop_nhds_zero_nat
 
 /-- In the trivial model, `(σ, u, γ) = (-f, f, 0)` solves the source problem (11). -/

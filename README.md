@@ -63,6 +63,7 @@ Four layers, in increasing distance from the thesis's proofs:
 | `eigenvalue_identity`, `eigenvalue_identity_raw` | Lemma 4.9, p. 30 | thesis | proved |
 | `postprocessedEigenvalue` | Definition 5.5, (59), p. 41 | thesis | definition |
 | `postprocessed_eigenvalue_identity`, `…_raw` | Lemma 5.6, (60), pp. 41–42 | thesis | proved (see errata) |
+| `DiscreteFamily.exists_h_le`, `eventually_h_lt`, `nonempty_index` | arbitrarily fine meshes exist (nontrivial refinement filter) | — | proved |
 | `Statements/Framework.lean`: `DiscreteFamily`, `MixedSource`, `DiscreteMixedSource`, `IsKernel`, `IsDiscreteKernel`, `hdivNorm`, `SobolevNorms` | (11), (17), (18), pp. 6, 14 | thesis | definitions |
 | `Statements/Cea.lean`: `CeaHypotheses` | Theorem 3.1 hypotheses, pp. 15–16 | [5, Thm 3.1], [9] | definitions; needs an `L²`-quasi-optimal Fortin operator as extra hypothesis |
 | `CeaHypotheses.coercive_discrete`, `div_eq_zero_of_isDiscreteKernel` | coercivity on `ker(Bₕ + Cₕ)`, p. 15; `div Σₕ ⊆ Uₕ`, p. 28 | thesis | proved |
