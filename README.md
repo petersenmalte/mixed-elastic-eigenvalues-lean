@@ -62,7 +62,7 @@ Four layers, in increasing distance from the thesis's proofs:
 | `energy_Cinv_add` | `‖C⁻¹e + d‖²_{C^{1/2}}` expansion, p. 30 | thesis | proved |
 | `eigenvalue_identity`, `eigenvalue_identity_raw` | Lemma 4.9, p. 30 | thesis | proved |
 | `postprocessedEigenvalue` | Definition 5.5, (59), p. 41 | thesis | definition |
-| `postprocessed_eigenvalue_identity`, `…_raw` | Lemma 5.6, (60), pp. 41–42 | thesis | proved (see errata) |
+| `postprocessed_eigenvalue_identity`, `postprocessed_eigenvalue_identity_raw` | Lemma 5.6, (60), pp. 41–42 | thesis | proved (see errata) |
 | `DiscreteFamily.exists_h_le`, `eventually_h_lt`, `nonempty_index` | arbitrarily fine meshes exist (nontrivial refinement filter) | — | proved |
 | `Statements/Framework.lean`: `DiscreteFamily`, `MixedSource`, `DiscreteMixedSource`, `IsKernel`, `IsDiscreteKernel`, `hdivNorm`, `SobolevNorms` | (11), (17), (18), pp. 6, 14 | thesis | definitions |
 | `Statements/Cea.lean`: `CeaHypotheses` | Theorem 3.1 hypotheses, pp. 15–16 | [5, Thm 3.1], [9] | definitions; needs an `L²`-quasi-optimal Fortin operator as extra hypothesis |
@@ -171,8 +171,12 @@ nonnegative functions (`SobolevNorms`) that only appear in regularity hypotheses
 - **Element-wise quantities** `Σ_T h_T² ‖·‖²_T` and `Σ_E h_E⁻¹ ‖[·]‖²_E` of Chapter 6 are
   replaced by `h² ‖·‖²` (uniform mesh, p. 8) and by an abstract jump seminorm.
 - **Chapter 7** (numerical experiments) has no formal counterpart.
-- The existence and uniqueness of the postprocessing (52) (pp. 37–38) and of the
-  continuous problems (Chapter 2) are not formalized; solutions are part of the data.
+- The existence and uniqueness of the postprocessing (52) (pp. 37–38) are proved
+  (`PostprocessingExistence.lean`). For the continuous source problem (11), uniqueness
+  is proved from (16) and the continuous inf-sup condition (`source_unique`), but
+  existence is the hypothesis `SourceHypotheses.exists_sol`: it is Brezzi's splitting
+  theorem in `H(div)`, which needs the Hilbert space setting that is out of reach here.
+  The eigenpairs of (36) and (37) are still part of the data.
 - The a posteriori bounds retain higher-order terms involving the exact solution and
   eigenvalue. Their higher order or absorbability is not proved. In Theorem 6.4, the
   retained squared eigenvalue error bounds errors at least one; for smaller errors,
