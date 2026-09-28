@@ -36,7 +36,8 @@ Four layers, in increasing distance from the thesis's proofs:
 4. **The continuous problem** (`Continuous/`): Proposition 2.1, Lemma 2.2, the
    continuous inf-sup condition (13) and the coercivity (16) uniformly in `λ`, on
    abstract `L²` spaces. The trace and deviator on `L²(Ω; ℝ²ˣ²)` are a
-   `TraceStructure` (two identities, from which the estimates of p. 13 follow); the
+   `TraceStructure` (two identities, from which the estimates of p. 13 follow), realized
+   on the actual Lebesgue spaces `MeasureTheory.Lp` together with `L²₀(Ω)`; the
    analytic input — Green's formula for `H¹₀`, a bounded right inverse of
    `div : H¹₀ → L²₀` (Bogovskiĭ), and the two stress liftings of [5] — is a typed
    hypothesis, and the proofs from it are complete.
@@ -81,6 +82,8 @@ Four layers, in increasing distance from the thesis's proofs:
 | `Continuous/Trace.lean`: `TraceStructure`, `dev` | trace and deviator on `L²(Ω; ℝ²ˣ²)`, pp. 9–10 | thesis | definitions (two identities: (12) integrated, `tr I = 2`) |
 | `tr_dev`, `dev_add`, `idm_tr`, `dev_idm`, `dev_dev`, `inner_dev_idm`, `norm_idm`, `norm_sq_eq` | (12) integrated, p. 13 | thesis | proved |
 | `norm_dev_le`, `norm_tr_le` | `‖dev τ‖₀ ≤ ‖τ‖₀`, `‖τ‖₀ ≥ c ‖tr τ‖₀`, p. 13 | thesis | proved (`c = 1/√2`) |
+| `Continuous/TraceL2.lean`: `TraceStructure.L2`, `matTrace`, `matTraceL2` | trace and deviator on the Lebesgue spaces `L²(Ω; ℝ²ˣ²)`, `L²(Ω)` | thesis | proved: a pointwise trace structure lifts to `MeasureTheory.Lp` by composition; the `2×2` structure is `tr σ = (I, σ)`, `q ↦ q I` |
+| `meanZero`, `mem_meanZero_iff` | `L²₀(Ω)`, p. 14 | thesis | proved: the orthogonal complement of the constants is `{q : ∫ q = 0}` |
 | `Continuous/DevDiv.lean`: `DevDivData` | analytic input of Lemma 2.2 | [5] | hypotheses: `H¹₀`, Green's formula, `L²₀`, Bogovskiĭ right inverse of `div` |
 | `DevDivData.norm_tr_le`, `dev_div_estimate` | **Lemma 2.2**, p. 14 | [5, Prop. 1] | proved (for every `τ` with `∫ tr τ = 0`; no boundary condition needed) |
 | `Continuous/InfSup.lean`: `InfSupData` | analytic input of Proposition 2.1 | [5], [4] | hypotheses: bounded right inverse of `div : Σ₀ → U`, skew lifting by divergence-free stresses |
