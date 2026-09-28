@@ -48,6 +48,7 @@ end MixedElasticEigenvalues.Audit
 
 #check_axioms_of MixedElasticEigenvalues MixedElasticEigenvalues.Basic
   MixedElasticEigenvalues.Material MixedElasticEigenvalues.EigenvalueIdentities
+  MixedElasticEigenvalues.Continuous.Trace
   MixedElasticEigenvalues.Statements.Framework MixedElasticEigenvalues.Statements.EigenvalueRate
   MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
   MixedElasticEigenvalues.Statements.Postprocessing
