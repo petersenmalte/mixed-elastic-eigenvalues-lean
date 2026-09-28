@@ -49,6 +49,7 @@ end MixedElasticEigenvalues.Audit
 #check_axioms_of MixedElasticEigenvalues MixedElasticEigenvalues.Basic
   MixedElasticEigenvalues.Material MixedElasticEigenvalues.EigenvalueIdentities
   MixedElasticEigenvalues.Continuous.Trace
+  MixedElasticEigenvalues.Continuous.TraceL2
   MixedElasticEigenvalues.Continuous.DevDiv
   MixedElasticEigenvalues.Continuous.InfSup
   MixedElasticEigenvalues.Continuous.Coercivity

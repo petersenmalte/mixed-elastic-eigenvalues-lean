@@ -2,6 +2,7 @@ import MixedElasticEigenvalues.Basic
 import MixedElasticEigenvalues.Material
 import MixedElasticEigenvalues.EigenvalueIdentities
 import MixedElasticEigenvalues.Continuous.Trace
+import MixedElasticEigenvalues.Continuous.TraceL2
 import MixedElasticEigenvalues.Continuous.DevDiv
 import MixedElasticEigenvalues.Continuous.InfSup
 import MixedElasticEigenvalues.Continuous.Coercivity
