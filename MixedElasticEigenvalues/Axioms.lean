@@ -50,6 +50,7 @@ end MixedElasticEigenvalues.Audit
   MixedElasticEigenvalues.Material MixedElasticEigenvalues.EigenvalueIdentities
   MixedElasticEigenvalues.Continuous.Trace
   MixedElasticEigenvalues.Continuous.DevDiv
+  MixedElasticEigenvalues.Continuous.InfSup
   MixedElasticEigenvalues.Statements.Framework MixedElasticEigenvalues.Statements.EigenvalueRate
   MixedElasticEigenvalues.Statements.PostprocessedEigenvalue
   MixedElasticEigenvalues.Statements.Postprocessing
